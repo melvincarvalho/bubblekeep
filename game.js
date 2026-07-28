@@ -325,9 +325,9 @@ function popBubble(b, byPlayer) {
   if (i >= 0) G.bubbles.splice(i, 1);
   for (let k = 0; k < 22; k++) {
     const a = k / 22 * 6.283 + (hash32(k, Math.floor(b.x), 1) - 0.5) * 1.1;
-    const sp = 170 + hash32(k, Math.floor(b.y), 2) * 260;
+    const sp = 260 + hash32(k, Math.floor(b.y), 2) * 260;
     G.parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-      t: 0, life: 0.55 + hash32(k, 3, 4) * 0.4, r: 3.4 + hash32(k, 5, 6) * 4.2,
+      t: 0, life: 0.5 + hash32(k, 3, 4) * 0.2, drag: 0.90, r: 3.4 + hash32(k, 5, 6) * 4.2,
       col: k % 3 === 0 && b.holds ? KINDS[b.holds.kind].col : '#dff6ff' });
   }
   if (!b.holds) { beep(300, 0.04, 'sine'); return; }
@@ -338,19 +338,21 @@ function popBubble(b, byPlayer) {
     const pts = CHAIN[step];
     G.chain.push(G.time);
     G.score += pts;
-    pushPop(b.x, b.y, String(pts), step > 0);
+    pushPop(b.x, b.y, String(pts), step);
     G.shake = Math.max(G.shake, 0.75 + step * 0.30);
     G.freeze = Math.max(G.freeze, 0.09 + step * 0.035);
     G.flash = { x: b.x, y: b.y, t: G.time, big: step > 0 };
-    G.flashLife = 0.24;
-    G.parts.push({ ring: true, x: b.x, y: b.y, t: 0, life: 0.34 + step * 0.06, col: step > 0 ? '#ffe066' : '#bfefff' });
+    G.flashLife = 0.16;
+    G.parts.push({ ring: true, x: b.x, y: b.y, t: 0, life: 0.30, r0: 14, r1: 96, w0: 12, col: '#ffffff' });
+    G.parts.push({ ring: true, x: b.x, y: b.y, t: -0.06, life: 0.34, r0: 14, r1: 132, w0: 7,
+      col: b.holds ? KINDS[b.holds.kind].col : '#bfefff' });
     beep(440 + step * 160, 0.12, 'square');
     dropFruit(b.x, b.y, step);
     G.cleared++;
   }
 }
 // popups used to overprint into unreadable glyph soup; reserve a lane and walk upward
-function pushPop(x, y, txt, big) {
+function pushPop(x, y, txt, step) {
   const LANE = 34;
   let lane = Math.round(y / LANE);
   for (let guard = 0; guard < 12; guard++) {
@@ -359,7 +361,7 @@ function pushPop(x, y, txt, big) {
     lane--;
   }
   const px = Math.max(OXPAD, Math.min(PW - OXPAD, x));
-  G.pops.push({ x: px, y: lane * LANE, lane: lane, t: G.time, txt: txt, big: !!big });
+  G.pops.push({ x: px + ((G.pops.length % 2) ? 30 : -30), y: lane * LANE, lane: lane, t: G.time, txt: txt, step: step | 0 });
   if (G.pops.length > 8) G.pops.shift();
 }
 function dropFruit(x, y, tier) {
@@ -659,7 +661,7 @@ function roomUpdate(dt) {
         continue;
       }
     }
-    else { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 240 * dt; }
+    else { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 240 * dt; if (q.drag) { q.vx *= q.drag; q.vy *= q.drag; } }
     if (q.t > q.life) G.parts.splice(G.parts.indexOf(q), 1);
   }
   G.pops = G.pops.filter(p => G.time - p.t < 0.95);
@@ -1515,9 +1517,14 @@ function rr(x, y, w, h, r) {
   cx.closePath();
 }
 function shakeXY() {
-  if (!G || G.shake <= 0 || G.shotMode) return [0, 0];
-  const s = G.shake * 8;
-  return [(hash32(Math.floor(G.time * 60), 1) - 0.5) * s, (hash32(Math.floor(G.time * 60), 2) - 0.5) * s];
+  if (!G || G.shake <= 0) return [0, 0];
+  // trauma-squared falloff, and it must still apply in captures: disabling it there
+  // meant every screenshot proved the shake did not exist
+  const t = Math.min(1, G.shake);
+  const s = 14 * t * t;
+  const n = G.shotMode ? 0.62 : hash32(Math.floor(G.time * 60), 1);
+  const m = G.shotMode ? -0.44 : hash32(Math.floor(G.time * 60), 2) - 0.5;
+  return [(n - 0.5) * s, m * s];
 }
 function drawBackdrop() {
   const g = cx.createLinearGradient(0, 0, 0, 720);
@@ -1901,18 +1908,26 @@ function drawPlayfield() {
       cx.beginPath(); cx.arc(q.x, q.y, 8, 0, 7); cx.fill();
       cx.strokeStyle = '#5c4530'; cx.lineWidth = 2; cx.stroke();
     } else if (q.ring) {
-      const k = q.t / q.life;
-      cx.globalAlpha = Math.max(0, 1 - k) * 0.9;
-      cx.strokeStyle = q.col; cx.lineWidth = Math.max(0.6, 7 - k * 6.4);
-      cx.beginPath(); cx.arc(q.x, q.y, 10 + k * 74, 0, 7); cx.stroke();
-      cx.globalAlpha = 1;
+      if (q.t < 0) continue;
+      const k = Math.min(1, q.t / q.life);
+      cx.save();
+      cx.globalCompositeOperation = 'lighter';
+      cx.globalAlpha = Math.max(0, 1 - k) * 0.95;
+      cx.strokeStyle = q.col;
+      cx.lineWidth = Math.max(1, (q.w0 || 8) * (1 - k));
+      cx.beginPath(); cx.arc(q.x, q.y, (q.r0 || 14) + k * ((q.r1 || 90) - (q.r0 || 14)), 0, 7); cx.stroke();
+      cx.restore();
     } else {
       const k = q.t / q.life;
       cx.save();
+      cx.globalCompositeOperation = 'lighter';
       cx.globalAlpha = Math.max(0, 1 - k * k);
-      cx.shadowColor = q.col; cx.shadowBlur = 8;
-      cx.fillStyle = q.col;
-      cx.beginPath(); cx.arc(q.x, q.y, (q.r || 3) * (1 - k * 0.4), 0, 7); cx.fill();
+      cx.strokeStyle = q.col; cx.lineWidth = (q.r || 3) * 1.3;   // a streak, not a dot
+      cx.lineCap = 'round';
+      cx.beginPath(); cx.moveTo(q.x, q.y);
+      cx.lineTo(q.x - (q.vx || 0) * 0.022, q.y - (q.vy || 0) * 0.022); cx.stroke();
+      cx.fillStyle = '#ffffff';
+      cx.beginPath(); cx.arc(q.x, q.y, (q.r || 3) * (1 - k * 0.4) * 0.6, 0, 7); cx.fill();
       cx.restore();
     }
   }
@@ -1951,10 +1966,10 @@ function drawPlayfield() {
     cx.translate(p.x, p.y - age * 46);
     cx.scale(punch, punch);
     cx.textAlign = 'center';
-    cx.font = 'bold ' + (p.big ? 26 : 19) + 'px monospace';
+    cx.font = 'bold ' + (19 + (p.step || 0) * 7) + 'px monospace';
     cx.strokeStyle = 'rgba(8,4,20,0.95)'; cx.lineWidth = 6;
     cx.strokeText(p.txt, 0, 0);
-    cx.fillStyle = p.big ? '#7cff9e' : '#f5d06a';
+    cx.fillStyle = ['#ffd23f', '#7bff8f', '#6ff0ff', '#ff6fd8'][Math.min(3, p.step || 0)];
     cx.fillText(p.txt, 0, 0);
     cx.restore();
   }
@@ -2167,7 +2182,7 @@ function drawEnd() {
     : ('REACHED ROOM ' + (G.roomIndex + 1) + '/' + G.maxRooms);
   cx.fillText(roomLine + '   ·   ' + G.cleared + ' MONSTERS POPPED   ·   ' +
     G.deaths + (G.deaths === 1 ? ' DRAGON LOST' : ' DRAGONS LOST'), 640, 398);
-  const isBest = G.score >= G.best;
+  const isBest = G.score > 0 && G.score >= G.best;
   cx.font = 'bold 14px monospace';
   cx.fillStyle = isBest ? '#7cff9e' : '#8a7fb5';
   cx.fillText(isBest ? '\u2605 NEW BEST' : ('BEST  ' + String(G.best).replace(/\B(?=(\d{3})+(?!\d))/g, ',')), 640, 428);
@@ -2351,7 +2366,6 @@ const SHOTS = {
         G.enemies.splice(G.enemies.indexOf(b.holds), 1);
         popBubble(b, true);
       }
-      G.time += 0.12;
     },
     check() { return G.pops.length >= 3 && G.bubbles.length === 1; },
   },
