@@ -16,7 +16,7 @@ function hash32(a, b, c) {
 }
 
 // ------------------------------ the keep ------------------------------
-const TILE = 36, COLS = 24, ROWS = 16;
+const TILE = 36, COLS = 24, ROWS = 16, OXPAD = 42;
 const PW = COLS * TILE, PH = ROWS * TILE;          // 864 x 576
 const OX = (1280 - PW) / 2, OY = 106;
 
@@ -323,10 +323,12 @@ function playerPop(first) {
 function popBubble(b, byPlayer) {
   const i = G.bubbles.indexOf(b);
   if (i >= 0) G.bubbles.splice(i, 1);
-  for (let k = 0; k < 20; k++) {
-    const a = k / 20 * 6.283 + (hash32(k, Math.floor(b.x), 1) - 0.5) * 1.0;
-    const sp = 90 + hash32(k, Math.floor(b.y), 2) * 180;
-    G.parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.3 + hash32(k, 3, 4) * 0.25, col: '#bfefff' });
+  for (let k = 0; k < 22; k++) {
+    const a = k / 22 * 6.283 + (hash32(k, Math.floor(b.x), 1) - 0.5) * 1.1;
+    const sp = 170 + hash32(k, Math.floor(b.y), 2) * 260;
+    G.parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      t: 0, life: 0.55 + hash32(k, 3, 4) * 0.4, r: 3.4 + hash32(k, 5, 6) * 4.2,
+      col: k % 3 === 0 && b.holds ? KINDS[b.holds.kind].col : '#dff6ff' });
   }
   if (!b.holds) { beep(300, 0.04, 'sine'); return; }
   // a monster released from a burst bubble is a kill; several in one breath escalate
@@ -336,15 +338,29 @@ function popBubble(b, byPlayer) {
     const pts = CHAIN[step];
     G.chain.push(G.time);
     G.score += pts;
-    G.pops.push({ x: b.x, y: b.y, t: G.time, txt: String(pts), big: step > 0, lift: step * 26, scale: 1 + step * 0.22 });
+    pushPop(b.x, b.y, String(pts), step > 0);
     G.shake = Math.max(G.shake, 0.75 + step * 0.30);
     G.freeze = Math.max(G.freeze, 0.09 + step * 0.035);
     G.flash = { x: b.x, y: b.y, t: G.time, big: step > 0 };
+    G.flashLife = 0.24;
     G.parts.push({ ring: true, x: b.x, y: b.y, t: 0, life: 0.34 + step * 0.06, col: step > 0 ? '#ffe066' : '#bfefff' });
     beep(440 + step * 160, 0.12, 'square');
     dropFruit(b.x, b.y, step);
     G.cleared++;
   }
+}
+// popups used to overprint into unreadable glyph soup; reserve a lane and walk upward
+function pushPop(x, y, txt, big) {
+  const LANE = 34;
+  let lane = Math.round(y / LANE);
+  for (let guard = 0; guard < 12; guard++) {
+    const taken = G.pops.some(p => Math.abs(p.x - x) < 108 && p.lane === lane && G.time - p.t < 0.85);
+    if (!taken) break;
+    lane--;
+  }
+  const px = Math.max(OXPAD, Math.min(PW - OXPAD, x));
+  G.pops.push({ x: px, y: lane * LANE, lane: lane, t: G.time, txt: txt, big: !!big });
+  if (G.pops.length > 8) G.pops.shift();
 }
 function dropFruit(x, y, tier) {
   const f = FRUIT[Math.min(FRUIT.length - 1, tier)];
@@ -549,7 +565,7 @@ function playerUpdate(dt, input) {
   for (const f of G.fruits.slice()) {
     if (Math.abs(f.x - p.x) < 22 && Math.abs(f.y - p.y) < 24) {
       G.score += f.kind.value;
-      G.pops.push({ x: f.x, y: f.y, t: G.time, txt: String(f.kind.value), big: false, lift: 0, scale: 1 });
+      pushPop(f.x, f.y, String(f.kind.value), false);
       G.fruits.splice(G.fruits.indexOf(f), 1);
       beep(880, 0.06, 'sine');
     }
@@ -646,7 +662,7 @@ function roomUpdate(dt) {
     else { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 240 * dt; }
     if (q.t > q.life) G.parts.splice(G.parts.indexOf(q), 1);
   }
-  G.pops = G.pops.filter(p => G.time - p.t < 1.0);
+  G.pops = G.pops.filter(p => G.time - p.t < 0.95);
 }
 function tick(dt, input) {
   if (!G || G.over || G.won) return;
@@ -1511,12 +1527,64 @@ function drawBackdrop() {
   cx.save();
   cx.translate(OX, OY);
   const gg = cx.createLinearGradient(0, 0, 0, PH);
-  gg.addColorStop(0, SKY[0]); gg.addColorStop(1, SKY[1]);
+  const hot = G.hurry ? Math.min(1, (G.roomT - hurryAt()) / 3 + 0.35) : 0;
+  gg.addColorStop(0, '#080b22'); gg.addColorStop(0.52, '#241a52'); gg.addColorStop(1, '#090c26');
   cx.fillStyle = gg; cx.fillRect(0, 0, PW, PH);
-  cx.strokeStyle = 'rgba(255,255,255,0.045)'; cx.lineWidth = 3;
-  for (let i = 0; i < 6; i++) {
-    const w = 120 + i * 66, cxx = PW / 2, cyy = PH * 0.92;
-    cx.beginPath(); cx.arc(cxx, cyy, w, Math.PI, 0); cx.stroke();
+  // an actually warm pool, added with 'lighter' so it reads as firelight, not tint
+  cx.save();
+  cx.globalCompositeOperation = 'lighter';
+  const warm = cx.createRadialGradient(PW * 0.5, PH * 0.98, 10, PW * 0.5, PH * 0.98, PH * 0.95);
+  warm.addColorStop(0, 'rgba(255,150,80,0.17)');
+  warm.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = warm; cx.fillRect(0, 0, PW, PH);
+  cx.restore();
+  if (hot) {                                  // multiply the alarm over the room, not replace it
+    cx.fillStyle = 'rgba(180,20,50,' + (0.34 * hot).toFixed(2) + ')';
+    cx.fillRect(0, 0, PW, PH);
+  }
+
+  // ---- the keep is a built place: pillars, arches and chains behind the play ----
+  const seedR = G.roomIndex;
+  cx.strokeStyle = 'rgba(150,190,255,0.055)'; cx.lineWidth = 2;
+  for (let i = 0; i < 4; i++) {                       // buttressed columns
+    const cxp = 70 + ((i * 227 + seedR * 91) % (PW - 140));
+    const w = 34 + hash32(i, seedR, 1) * 22;
+    cx.fillStyle = 'rgba(120,150,230,0.045)';
+    cx.fillRect(cxp - w / 2, 40, w, PH - 40);
+    cx.beginPath(); cx.moveTo(cxp - w / 2, 40); cx.lineTo(cxp - w / 2, PH); cx.stroke();
+    cx.beginPath(); cx.moveTo(cxp + w / 2, 40); cx.lineTo(cxp + w / 2, PH); cx.stroke();
+    for (let b = 0; b < 5; b++) {                     // course lines
+      const by = 70 + b * ((PH - 90) / 5);
+      cx.beginPath(); cx.moveTo(cxp - w / 2, by); cx.lineTo(cxp + w / 2, by); cx.stroke();
+    }
+  }
+  cx.strokeStyle = 'rgba(150,190,255,0.07)'; cx.lineWidth = 3;
+  for (let i = 0; i < 3; i++) {                       // vaulted arches up top
+    const ax = 150 + ((i * 300 + seedR * 130) % (PW - 300));
+    cx.beginPath(); cx.arc(ax, 96, 84, Math.PI, 0); cx.stroke();
+    cx.beginPath(); cx.arc(ax, 96, 62, Math.PI, 0); cx.stroke();
+  }
+  cx.strokeStyle = 'rgba(190,210,255,0.05)'; cx.lineWidth = 2;
+  for (let i = 0; i < 5; i++) {                       // hanging chains
+    const hx = 46 + ((i * 181 + seedR * 57) % (PW - 92));
+    const len = 90 + hash32(i, seedR, 3) * 150;
+    cx.beginPath();
+    for (let s = 0; s < len; s += 12) {
+      cx.moveTo(hx - 3, 34 + s); cx.lineTo(hx + 3, 40 + s);
+      cx.moveTo(hx + 3, 40 + s); cx.lineTo(hx - 3, 46 + s);
+    }
+    cx.stroke();
+    cx.fillStyle = 'rgba(190,210,255,0.06)';
+    cx.beginPath(); cx.arc(hx, 34 + len, 5, 0, 7); cx.fill();
+  }
+  // braziers: the warm accent the palette was missing
+  for (let i = 0; i < 2; i++) {
+    const bx = i ? PW - 54 : 54, by = PH * 0.42;
+    const fl = cx.createRadialGradient(bx, by, 2, bx, by, 108);
+    fl.addColorStop(0, 'rgba(255,170,70,0.20)'); fl.addColorStop(1, 'rgba(255,140,60,0)');
+    cx.fillStyle = fl; cx.beginPath(); cx.arc(bx, by, 108, 0, 7); cx.fill();
+    cx.fillStyle = '#ffb347';
+    cx.beginPath(); cx.arc(bx, by, 5, 0, 7); cx.fill();
   }
   cx.fillStyle = 'rgba(255,255,255,0.03)';
   for (let i = 0; i < 40; i++) {
@@ -1528,24 +1596,25 @@ function drawBackdrop() {
 function tileCols() {
   const i = G.roomIndex % 6;
   const sets = [
-    ['#2f8fd8', '#1c5f96', '#7fd4ff'], ['#e0653f', '#a53f22', '#ffb08a'],
-    ['#4fbf6a', '#2b7d41', '#a8f0b8'], ['#b96bd8', '#7a3d94', '#e6b6ff'],
-    ['#e0a93f', '#a87422', '#ffe0a0'], ['#5f7fe0', '#3a4fa0', '#b0c4ff'],
+    ['#2f7fd0', '#1d5aa0', '#6fc0ff'], ['#c2542f', '#8c3218', '#e89468'],
+    ['#3f9e56', '#22633a', '#7fd096'], ['#9a54bb', '#63307a', '#c48ede'],
+    ['#c08f2c', '#8a5d17', '#e6c470'], ['#4d68c0', '#2e3d84', '#8fa4e8'],
   ];
   return sets[i];
 }
 function drawRoom() {
   const [face, dark, lite] = tileCols();
   // one soft shadow behind every slab, so the stone sits in front of the cavern
-  cx.globalAlpha = 0.34; cx.fillStyle = '#0a0420';
+  cx.globalAlpha = 0.22; cx.fillStyle = '#080418';
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-    if (G.room[y][x] !== '#') continue;
-    cx.fillRect(x * TILE + 6, y * TILE + 7, TILE, TILE);
+    if (G.room[y][x] !== '#' || x === 0 || x === COLS - 1 || y === 0 || y === ROWS - 1) continue;
+    cx.fillRect(x * TILE + 2, y * TILE + 3, TILE, TILE);
   }
   cx.globalAlpha = 1;
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     if (G.room[y][x] !== '#') continue;
     const px = x * TILE, py = y * TILE;
+    const isWall = x === 0 || x === COLS - 1 || y === 0 || y === ROWS - 1;
     const openAbove = !solidAt(G.room, x, y - 1);
     const openL = !solidAt(G.room, x - 1, y), openR = !solidAt(G.room, x + 1, y);
     // square the joins inside a run, round only the ends: eight buttons become one slab
@@ -1563,15 +1632,29 @@ function drawRoom() {
       cx.quadraticCurveTo(px + ox, py + oy, px + ox + rl, py + oy);
       cx.closePath();
     };
+    if (isWall) {
+      // the border is masonry: flat, dark, no gloss — it must not read as a ledge
+      cx.fillStyle = '#12294a'; cx.fillRect(px, py, TILE, TILE);
+      cx.strokeStyle = '#0a1730'; cx.lineWidth = 1;
+      cx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
+      cx.fillStyle = 'rgba(0,0,0,0.10)';       // stone dither, no bevel, no gloss
+      for (let d = 0; d < 3; d++) {
+        const hx = hash32(x, y, d) * (TILE - 6), hy = hash32(y, x, d + 9) * (TILE - 6);
+        cx.fillRect(px + 3 + hx, py + 3 + hy, 3, 3);
+      }
+      continue;
+    }
     cx.fillStyle = dark; path(0, 3, TILE, TILE - 3); cx.fill();
     const fg = cx.createLinearGradient(0, py, 0, py + TILE);
     fg.addColorStop(0, lite); fg.addColorStop(0.28, face); fg.addColorStop(1, dark);
     cx.fillStyle = fg; path(0, 0, TILE, TILE - 4); cx.fill();
     if (openAbove) {
-      cx.globalAlpha = 0.65; cx.fillStyle = '#ffffff';
-      rr(px + 5, py + 4, TILE - 10, 3, 1.5); cx.fill();
+      cx.globalAlpha = 0.5; cx.fillStyle = lite;
+      cx.fillRect(px + 2, py + 2, TILE - 4, 2);
       cx.globalAlpha = 1;
     }
+    cx.strokeStyle = '#0a2038'; cx.lineWidth = 3;
+    path(1.5, 1.5, TILE - 3, TILE - 7); cx.stroke();
     // a stud or a crack, so no two tiles are quite the same
     const v = hash32(x, y, 4);
     cx.globalAlpha = 0.22;
@@ -1604,7 +1687,8 @@ function drawDragon(p) {
   cx.translate(p.x - (p.face * 4 * (p.recoil || 0)), p.y + bob + 16);
   cx.scale(p.face * sx, sy);
   cx.translate(0, -16);
-  if (p.invuln > 0 && Math.floor(p.invuln * 14) % 2 === 0) cx.globalAlpha = 0.35;
+  // never fade the character out — blink a bright rim instead, so the face stays legible
+  const iFlash = p.invuln > 0 && Math.floor(p.invuln * 12) % 2 === 0;
   const step = Math.sin(p.anim * 11) * (Math.abs(p.vx) > 4 ? 3.2 : 0);
   // tail
   cx.fillStyle = '#2f7a28';
@@ -1633,6 +1717,13 @@ function drawDragon(p) {
   cx.fillStyle = bg;
   cx.beginPath(); cx.ellipse(0, 0, 19, 18, 0, 0, 7); cx.fill();
   cx.strokeStyle = '#20551a'; cx.lineWidth = 2.6; cx.stroke();
+  if (iFlash) {                     // a rim ON TOP of a fully drawn face, never over it
+    cx.save();
+    cx.strokeStyle = 'rgba(255,255,255,0.92)'; cx.lineWidth = 3;
+    cx.shadowColor = '#8ffcd0'; cx.shadowBlur = 10;
+    cx.beginPath(); cx.ellipse(0, 0, 20.5, 19.5, 0, 0, 7); cx.stroke();
+    cx.restore();
+  }
   // belly
   cx.fillStyle = '#f0ffd8';
   cx.beginPath(); cx.ellipse(3, 7, 11, 9, 0, 0, 7); cx.fill();
@@ -1641,7 +1732,7 @@ function drawDragon(p) {
   cx.fillStyle = 'rgba(255,140,150,0.5)';
   cx.beginPath(); cx.ellipse(12, 2, 4, 3, 0, 0, 7); cx.fill();
   // face
-  const blink = (Math.floor(p.anim * 1.1) % 7) === 0 && (p.anim * 1.1 % 1) < 0.13;
+  const blink = !G.shotMode && (Math.floor(p.anim * 1.1) % 7) === 0 && (p.anim * 1.1 % 1) < 0.13;
   eyePair(3, -5, 1, 1.18, blink);
   // mouth — open while blowing
   if (p.blowT > 0) {
@@ -1771,15 +1862,20 @@ function drawGhost(g) {
   const t = G.time;
   cx.save(); cx.translate(g.x, g.y + Math.sin(t * 4) * 3);
   cx.globalAlpha = 0.9;
-  cx.fillStyle = 'rgba(235,240,255,0.92)';
+  const gg2 = cx.createLinearGradient(0, -18, 0, 14);
+  gg2.addColorStop(0, '#ffd6ef'); gg2.addColorStop(1, '#ff7fd0');
+  cx.shadowColor = 'rgba(255,127,208,0.7)'; cx.shadowBlur = 16;
+  cx.fillStyle = gg2;
   cx.beginPath();
-  cx.arc(0, -4, 14, Math.PI, 0);
-  cx.lineTo(14, 12);
-  for (let i = 0; i < 4; i++) cx.quadraticCurveTo(10 - i * 7, 12 + (i % 2 ? -6 : 6), 7 - i * 7, 12);
-  cx.lineTo(-14, 12); cx.closePath(); cx.fill();
-  cx.fillStyle = '#241452';
-  cx.beginPath(); cx.arc(-5, -4, 3.4, 0, 7); cx.fill();
-  cx.beginPath(); cx.arc(5, -4, 3.4, 0, 7); cx.fill();
+  cx.arc(0, -6, 14, Math.PI, 0);                 // taller dome
+  cx.lineTo(14, 8);
+  cx.quadraticCurveTo(9, 20, 5, 9);              // three uneven torn wisps
+  cx.quadraticCurveTo(0, 22, -4, 10);
+  cx.quadraticCurveTo(-9, 19, -14, 8);
+  cx.closePath(); cx.fill();
+  cx.shadowBlur = 0;
+  cx.strokeStyle = 'rgba(40,20,70,0.65)'; cx.lineWidth = 2; cx.stroke();
+  eyePair(0, -7, 1, 0.95, false);
   cx.restore();
 }
 function drawPlayfield() {
@@ -1807,14 +1903,17 @@ function drawPlayfield() {
     } else if (q.ring) {
       const k = q.t / q.life;
       cx.globalAlpha = Math.max(0, 1 - k) * 0.9;
-      cx.strokeStyle = q.col; cx.lineWidth = Math.max(1, 6 - k * 5);
-      cx.beginPath(); cx.arc(q.x, q.y, 8 + k * 54, 0, 7); cx.stroke();
+      cx.strokeStyle = q.col; cx.lineWidth = Math.max(0.6, 7 - k * 6.4);
+      cx.beginPath(); cx.arc(q.x, q.y, 10 + k * 74, 0, 7); cx.stroke();
       cx.globalAlpha = 1;
     } else {
-      cx.globalAlpha = Math.max(0, 1 - q.t / q.life);
+      const k = q.t / q.life;
+      cx.save();
+      cx.globalAlpha = Math.max(0, 1 - k * k);
+      cx.shadowColor = q.col; cx.shadowBlur = 8;
       cx.fillStyle = q.col;
-      cx.beginPath(); cx.arc(q.x, q.y, 3, 0, 7); cx.fill();
-      cx.globalAlpha = 1;
+      cx.beginPath(); cx.arc(q.x, q.y, (q.r || 3) * (1 - k * 0.4), 0, 7); cx.fill();
+      cx.restore();
     }
   }
   for (const e of G.enemies) if (e.state === 'normal') drawMonster(e);
@@ -1846,17 +1945,16 @@ function drawPlayfield() {
   if (G.player) drawDragon(G.player);
   for (const p of G.pops) {
     const age = G.time - p.t;
-    const punch = age < 0.14 ? 1.55 - age / 0.14 * 0.55 : 1;
-    const sc = (p.scale || 1) * punch;
+    const punch = age < 0.16 ? 0.45 + age / 0.16 * 0.9 : (age < 0.24 ? 1.35 - (age - 0.16) / 0.08 * 0.35 : 1);
     cx.save();
-    cx.globalAlpha = Math.max(0, 1 - age);
-    cx.translate(p.x, p.y - (p.lift || 0) - age * 40);
-    cx.scale(sc, sc);
-    cx.fillStyle = p.big ? '#ffe066' : '#ffffff';
-    cx.font = 'bold ' + (p.big ? 20 : 15) + 'px monospace';
+    cx.globalAlpha = age > 0.55 ? Math.max(0, 1 - (age - 0.55) / 0.4) : 1;
+    cx.translate(p.x, p.y - age * 46);
+    cx.scale(punch, punch);
     cx.textAlign = 'center';
-    cx.strokeStyle = 'rgba(20,8,40,0.85)'; cx.lineWidth = 5;
+    cx.font = 'bold ' + (p.big ? 26 : 19) + 'px monospace';
+    cx.strokeStyle = 'rgba(8,4,20,0.95)'; cx.lineWidth = 6;
     cx.strokeText(p.txt, 0, 0);
+    cx.fillStyle = p.big ? '#7cff9e' : '#f5d06a';
     cx.fillText(p.txt, 0, 0);
     cx.restore();
   }
@@ -1866,79 +1964,80 @@ function drawPlayfield() {
   cx.strokeRect(OX - 2, OY - 2, PW + 4, PH + 4);
 }
 function drawHUD() {
-  cx.textAlign = 'left';
-  cx.fillStyle = '#ffe066'; cx.font = 'bold 13px monospace';
-  cx.fillText('SCORE', OX, 34);
+  const LABEL_Y = 32, VALUE_Y = 70;
+  const label = (s, x, right) => {
+    cx.fillStyle = '#e8b93a'; cx.font = 'bold 12px monospace';
+    cx.textAlign = right ? 'right' : 'left'; cx.fillText(s, x, LABEL_Y);
+  };
+  const value = (s, x, right, col) => {
+    cx.fillStyle = col || '#ffffff'; cx.font = 'bold 30px monospace';
+    cx.textAlign = right ? 'right' : 'left'; cx.fillText(s, x, VALUE_Y);
+  };
+  const C = [OX, OX + 286, OX + 470, OX + 604];
+  label('SCORE', C[0]);
   cx.save();
-  cx.font = 'bold 34px monospace';
-  cx.lineWidth = 5; cx.strokeStyle = 'rgba(20,8,40,0.9)';
-  cx.strokeText(String(G.score).padStart(7, '0'), OX, 68);
-  const sg = cx.createLinearGradient(0, 44, 0, 70);
-  sg.addColorStop(0, '#ffffff'); sg.addColorStop(1, '#ffd24a');
-  cx.fillStyle = sg;
-  cx.fillText(String(G.score).padStart(7, '0'), OX, 68);
+  cx.shadowColor = 'rgba(245,208,106,0.55)'; cx.shadowBlur = 10;
+  value(String(G.score).padStart(7, '0'), C[0], false, '#f5d06a');
   cx.restore();
-  // lives as little dragons
-  cx.fillStyle = '#ffe066'; cx.font = 'bold 13px monospace';
-  cx.fillText('DRAGONS', OX + 250, 34);
-  for (let i = 0; i < Math.min(6, Math.max(0, G.lives)); i++) {
-    cx.save(); cx.translate(OX + 258 + i * 30, 56); cx.scale(0.62, 0.62);
-    cx.fillStyle = '#5fc44a';
+  label('DRAGONS', C[1]);
+  for (let i = 0; i < 3; i++) {                     // always draw all three sockets
+    const lit = i < G.lives;
+    cx.save(); cx.translate(C[1] + 14 + i * 34, VALUE_Y - 10); cx.scale(0.6, 0.6);
+    cx.globalAlpha = lit ? 1 : 0.20;
+    cx.fillStyle = lit ? '#5fc44a' : '#5a6a86';
     cx.beginPath(); cx.ellipse(0, 0, 15, 15, 0, 0, 7); cx.fill();
-    cx.strokeStyle = '#255f1f'; cx.lineWidth = 2.4; cx.stroke();
-    eyePair(2, -3, 1, 0.85, false);
-    cx.restore();
+    cx.strokeStyle = lit ? '#255f1f' : '#2b3448'; cx.lineWidth = 2.4; cx.stroke();
+    if (lit) eyePair(2, -3, 1, 0.85, false);
+    cx.globalAlpha = 1; cx.restore();
   }
-  // the objective, in the space that was doing nothing
-  cx.fillStyle = '#ffe066'; cx.font = 'bold 13px monospace';
-  cx.fillText('MONSTERS', OX + 470, 34);
-  cx.fillStyle = G.enemies.length ? '#ffffff' : '#6ee36a';
-  cx.font = 'bold 30px monospace';
-  cx.fillText(String(G.enemies.length), OX + 470, 66);
-  cx.fillStyle = '#8a7fb5'; cx.font = 'bold 11px monospace';
-  cx.fillText('LEFT IN THE ROOM', OX + 500, 64);
-  // room
-  cx.fillStyle = '#ffe066'; cx.font = 'bold 13px monospace';
-  cx.fillText('ROOM', OX + 636, 34);
-  cx.fillStyle = '#ffffff'; cx.font = 'bold 28px monospace';
-  cx.fillText((G.roomIndex + 1) + '/' + G.maxRooms, OX + 636, 66);
-  // extend
-  cx.fillStyle = '#ffe066'; cx.font = 'bold 13px monospace';
-  cx.textAlign = 'right';
-  cx.fillText('EXTEND = 1UP', OX + PW, 34);
-  cx.textAlign = 'center';
+  if (G.lives > 3) {
+    cx.fillStyle = '#7cff9e'; cx.font = 'bold 15px monospace'; cx.textAlign = 'left';
+    cx.fillText('+' + (G.lives - 3), C[1] + 118, VALUE_Y - 4);
+  }
+  label('MONSTERS LEFT', C[2]);
+  value(String(G.enemies.length), C[2], false, G.enemies.length ? '#ffffff' : '#7cff9e');
+  label('ROOM', C[3]);
+  value((G.roomIndex + 1) + '/' + G.maxRooms, C[3]);
+  label('EXTEND', OX + PW, true);
+  cx.font = 'bold 19px monospace';
   for (let i = 0; i < 6; i++) {
-    const x = OX + PW - 6 * 27 + i * 27 + 8, y = 66;
+    const x = OX + PW - (5 - i) * 26 - 10;
+    cx.font = 'bold 19px monospace'; cx.textAlign = 'center';
     if (G.have[i]) {
-      cx.fillStyle = '#ffe066'; cx.font = 'bold 20px monospace';
-      cx.fillText(LETTERS[i], x, y);
+      cx.save(); cx.shadowColor = '#7cff9e'; cx.shadowBlur = 9;
+      cx.fillStyle = '#7cff9e'; cx.fillText(LETTERS[i], x, VALUE_Y); cx.restore();
     } else {
-      cx.strokeStyle = 'rgba(180,165,225,0.75)'; cx.lineWidth = 1.4;
-      cx.font = 'bold 20px monospace';
-      cx.strokeText(LETTERS[i], x, y);
+      cx.strokeStyle = 'rgba(255,255,255,0.26)'; cx.lineWidth = 1.6;
+      cx.strokeText(LETTERS[i], x, VALUE_Y);
     }
   }
-  cx.textAlign = 'left';
-  // hurry-up clock
-  const left = Math.max(0, hurryAt() - G.roomT);
-  const frac = left / hurryAt();
-  cx.fillStyle = '#8a7fb5'; cx.font = 'bold 10px monospace';
-  cx.fillText('TIME', OX, OY + PH + 21);
   if (G.hard) {
     cx.fillStyle = '#ff8a5c'; cx.font = 'bold 11px monospace'; cx.textAlign = 'right';
-    cx.fillText('KEEP MODE', OX + PW, OY + PH + 36); cx.textAlign = 'left';
+    cx.fillText('KEEP MODE', OX + PW, 88);
   }
-  const SEG = 34, barX = OX + 40, barW = PW - 40, segW = barW / SEG;
-  const lit = G.hurry ? 0 : Math.ceil(frac * SEG);      // out of time means an empty bar
+  cx.textAlign = 'left';
+  // ---- the clock is the field's own bottom rail, and it never lies ----
+  const left = Math.max(0, hurryAt() - G.roomT);
+  const frac = G.calm ? 1 : left / hurryAt();
+  const SEG = 34, segW = PW / SEG;
+  const lit = G.hurry ? 1 : Math.max(1, Math.ceil(frac * SEG));   // never fully dark in play
+  const low = frac < 0.25 || G.hurry;
   for (let i = 0; i < SEG; i++) {
-    cx.fillStyle = i < lit ? (frac < 0.3 ? '#ffb03a' : '#6ee36a') : 'rgba(255,255,255,0.09)';
-    cx.fillRect(barX + i * segW + 1, OY + PH + 12, segW - 2, 9);
+    const on = i < lit;
+    if (on && G.hurry && !G.shotMode && Math.floor(G.time * 8) % 2 === 0) { continue; }
+    cx.fillStyle = on ? (low ? '#e8404f' : (frac < 0.45 ? '#a8952e' : '#2f6b38')) : 'rgba(255,255,255,0.06)';
+    cx.fillRect(OX + i * segW + 1.5, OY + PH + 9, segW - 3, 9);
   }
-  if (G.hurry) {                                       // the panic lives on the room's own border
-    const pulse = G.shotMode ? 0.85 : 0.5 + 0.5 * Math.sin(G.time * 9);
-    cx.strokeStyle = 'rgba(255,70,95,' + (0.4 + 0.6 * pulse).toFixed(2) + ')';
-    cx.lineWidth = 5;
-    cx.strokeRect(OX - 5, OY - 5, PW + 10, PH + 10);
+  cx.strokeStyle = 'rgba(255,255,255,0.14)'; cx.lineWidth = 1;
+  cx.strokeRect(OX + 0.5, OY + PH + 8.5, PW - 1, 10);
+  if (G.hurry) {
+    const pulse = G.shotMode ? 0.9 : 0.5 + 0.5 * Math.sin(G.time * 9);
+    cx.save();
+    cx.shadowColor = '#ff4b5c'; cx.shadowBlur = 26 * pulse;
+    cx.strokeStyle = 'rgba(255,75,92,' + (0.55 + 0.45 * pulse).toFixed(2) + ')';
+    cx.lineWidth = 4 + 10 * pulse;
+    cx.strokeRect(OX - 6, OY - 6, PW + 12, PH + 12);
+    cx.restore();
   }
 }
 function drawBanner() {
@@ -2031,49 +2130,62 @@ function drawTitle() {
   cx.textAlign = 'left';
 }
 function drawEnd() {
-  cx.fillStyle = G.won ? 'rgba(30,16,54,0.62)' : 'rgba(12,6,28,0.70)'; cx.fillRect(0, 0, 1280, 720);
+  // celebration first, scrim second — bubbles used to be drawn over the headline
+  if (G.won) {
+    for (let i = 0; i < 16; i++) {
+      const x = 140 + hash32(i, 11) * 1000;
+      const y = ((hash32(i, 12) * 700 + G.time * (40 + hash32(i, 13) * 50)) % 760) - 30;
+      drawBubble({ x: x, y: y, r: 9 + hash32(i, 14) * 11, age: G.time + i, holds: null });
+    }
+  }
+  cx.fillStyle = G.won ? 'rgba(8,6,24,0.58)' : 'rgba(8,6,24,0.78)'; cx.fillRect(0, 0, 1280, 720);
+  // a plate, so no bubble ever lands inside the headline
+  cx.save();
+  rr(322, 200, 636, 330, 16);
+  cx.fillStyle = 'rgba(6,8,22,0.96)'; cx.fill();
+  cx.strokeStyle = '#7c6bd8'; cx.lineWidth = 2; cx.stroke();
+  cx.restore();
   cx.textAlign = 'center';
   const won = G.won;
   const g = cx.createLinearGradient(0, 240, 0, 320);
   if (won) { g.addColorStop(0, '#d8ffd0'); g.addColorStop(1, '#4fd06a'); }
   else { g.addColorStop(0, '#ffd6dc'); g.addColorStop(1, '#e0455e'); }
-  cx.font = 'bold 60px monospace';
-  cx.lineWidth = 12; cx.strokeStyle = '#2a1550';
+  cx.font = 'bold 46px monospace';
+  cx.lineWidth = 10; cx.strokeStyle = '#2a1550';
   const title = won ? 'THE KEEP IS FREE!' : 'THE KEEP KEEPS YOU';
-  cx.strokeText(title, 640, 296);
-  cx.fillStyle = g; cx.fillText(title, 640, 296);
-  cx.font = 'bold 18px monospace'; cx.fillStyle = '#ffffff';
-  cx.fillText(won ? 'every monster bubbled, every room emptied' : 'the cave swallows another dragon', 640, 336);
-  cx.font = 'bold 38px monospace'; cx.fillStyle = '#ffe066';
-  cx.fillText(String(G.score).padStart(7, '0'), 640, 400);
-  cx.font = 'bold 14px monospace'; cx.fillStyle = '#c8b6ff';
-  cx.fillText('ROOM ' + (G.roomIndex + 1) + '  ·  ' + G.cleared + ' MONSTERS POPPED  ·  ' +
-    G.deaths + (G.deaths === 1 ? ' DRAGON LOST' : ' DRAGONS LOST'), 640, 432);
-  if (G.best > 0) {
-    cx.fillStyle = '#8a7fb5'; cx.font = 'bold 13px monospace';
-    cx.fillText('BEST  ' + String(G.best).padStart(7, '0'), 640, 456);
-  }
+  cx.strokeText(title, 640, 268);
+  cx.fillStyle = g; cx.fillText(title, 640, 268);
+  cx.font = 'bold 15px monospace'; cx.fillStyle = '#c8b6ff';
+  cx.fillText(won ? 'every room emptied' : 'the cave swallows another dragon', 640, 296);
+  cx.save();
+  cx.shadowColor = 'rgba(245,208,106,0.6)'; cx.shadowBlur = 16;
+  cx.font = 'bold 44px monospace'; cx.fillStyle = '#f5d06a';
+  cx.fillText(String(G.score).replace(/\B(?=(\d{3})+(?!\d))/g, ','), 640, 362);
+  cx.restore();
+  cx.font = 'bold 13px monospace'; cx.fillStyle = '#c8b6ff';
+  const roomLine = won ? ('ALL ' + G.maxRooms + ' ROOMS CLEARED')
+    : ('REACHED ROOM ' + (G.roomIndex + 1) + '/' + G.maxRooms);
+  cx.fillText(roomLine + '   ·   ' + G.cleared + ' MONSTERS POPPED   ·   ' +
+    G.deaths + (G.deaths === 1 ? ' DRAGON LOST' : ' DRAGONS LOST'), 640, 398);
+  const isBest = G.score >= G.best;
+  cx.font = 'bold 14px monospace';
+  cx.fillStyle = isBest ? '#7cff9e' : '#8a7fb5';
+  cx.fillText(isBest ? '\u2605 NEW BEST' : ('BEST  ' + String(G.best).replace(/\B(?=(\d{3})+(?!\d))/g, ',')), 640, 428);
   const blink = G.shotMode ? 1 : 0.55 + 0.45 * Math.sin(G.time * 3.4);
   cx.save(); cx.globalAlpha = blink;
   cx.strokeStyle = '#ffe066'; cx.lineWidth = 2.4;
-  rr(475, 486, 330, 46, 12); cx.stroke();
-  cx.fillStyle = '#ffe066'; cx.font = 'bold 16px monospace';
-  cx.fillText('[SPACE] PLAY AGAIN', 640, 515);
+  rr(478, 462, 324, 44, 12); cx.stroke();
+  cx.fillStyle = '#ffe066'; cx.font = 'bold 15px monospace';
+  cx.fillText('[SPACE] PLAY AGAIN', 640, 490);
   cx.restore();
   // the cast, celebrating or not
   for (let i = 0; i < 2; i++) {
     const hop = G.won ? Math.abs(Math.sin(G.time * 4 + i)) * 22 : 0;
-    cx.save(); cx.translate(452 + i * 376, 610 - hop); cx.scale(i ? -1.5 : 1.5, 1.5);
+    cx.save(); cx.translate(392 + i * 496, 626 - hop); cx.scale(i ? -1.6 : 1.6, 1.6);
     drawDragon({ x: 0, y: 0, anim: G.time + i * 1.7, face: 1, squash: 0, blowT: 0, invuln: 0, vx: 0 });
     cx.restore();
   }
-  if (G.won) {
-    for (let i = 0; i < 14; i++) {
-      const x = 200 + hash32(i, 11) * 880;
-      const y = ((hash32(i, 12) * 700 + G.time * (40 + hash32(i, 13) * 50)) % 760) - 30;
-      drawBubble({ x: x, y: y, r: 9 + hash32(i, 14) * 11, age: G.time + i, holds: null });
-    }
-  }
+
   drawScanlines();
   cx.textAlign = 'left';
 }
@@ -2087,9 +2199,9 @@ function draw() {
   drawBanner();
   if (G.staged && G.shotMode) {
     cx.save();
-    cx.fillStyle = '#ffd34a'; cx.globalAlpha = 0.62;
-    cx.font = 'bold 10px monospace'; cx.textAlign = 'right';
-    cx.fillText('STAGED POSITION \u2014 hand-built room, not bot play', 1272, 16);
+    cx.fillStyle = 'rgba(255,160,60,0.34)';
+    cx.font = '11px monospace'; cx.textAlign = 'left';
+    cx.fillText('STAGED', 12, 714);          // out of the HUD band, into the letterbox
     cx.restore(); cx.textAlign = 'left';
   }
   if (G.screen === 'paused') {
