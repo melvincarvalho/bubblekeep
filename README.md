@@ -280,6 +280,56 @@ too quick: it landed with *exactly zero margin*, because a jump only
 has to clear a platform's underside. They were wrong that it was
 impossible and right that it was broken. The fix went in anyway.
 
+## KEEP MODE — difficulty the player picks
+
+A real player reported the obvious: *"the first level is too easy, and the
+2nd… I get through it in seconds."* They were right, and chasing it
+exposed the deepest problem in this whole method.
+
+**The verification bot is a mediocre player, and it had become the
+ceiling on difficulty.** It never climbs, never rides a bubble, never
+crosses a gap — it plays the entire game on the floor waiting for
+monsters to walk down to it. Its clear time for room 1 is 19 seconds;
+a human does it in a fraction of that. Every difficulty decision in
+this game had been calibrated against the wrong player.
+
+Six attempts to raise the difficulty were measured, and **every single
+one broke the flagship theorem** — including adding literally *one*
+extra monster, which cost the bot enough lives early that it arrived at
+room 4 depleted and died. The bot has zero headroom.
+
+Two rewrites of the bot were attempted and both were regressions,
+honestly recorded here rather than quietly dropped:
+
+- Predictive avoidance — projecting where monsters *will* be and
+  fleeing toward open floor — **eliminated room 1's deaths entirely
+  (19 across six seeds to 0)**, and simultaneously made room 4 far
+  worse (30s/0 deaths became 70s/13), because a bot that flees more
+  kills less and meets the hurry-up ghost.
+- Refining it to ignore monsters already moving away, and to treat a
+  flyer as dangerous only mid-charge, still lost room 4.
+
+So rather than let a weak prover cap what a person plays, difficulty
+became **a choice the player makes**. Press `H` on the title screen (or
+add `?hard=1`) for KEEP MODE: every room gets a second wave of
+monsters, two per room, scaled by room. The setting persists.
+
+**The proofs always run the default.** That is the point: the theorem
+still means exactly what it says about the game it verifies, and the
+harder game is honestly labelled rather than smuggled past a gate that
+would have gone red. A `KEEP MODE` tag shows in the HUD while it is on.
+
+The reinforcements are spawned into the first genuine air tile of their
+column — an earlier attempt spawned them above the ceiling, where they
+promptly landed on top of it and stuck there, unkillable, so the room
+could never be cleared. That is the same class of bug as the screen
+wrap that used to strand the player on the roof, found the same way.
+
+**What this still needs:** the bot has to learn to route vertically
+before the *default* difficulty can rise. That is a navigation layer —
+a graph of standable surfaces with walk, jump and drop edges — not
+another heuristic patch, and it is the honest next piece of work.
+
 ## Honest assessment
 
 - **One critic round** — the scores are a floor, not a ceiling.

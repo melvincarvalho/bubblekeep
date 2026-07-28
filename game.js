@@ -179,11 +179,17 @@ function newGame(seed, opts) {
     letters: [], have: [0, 0, 0, 0, 0, 0], lastLetterAt: 0, roomT: 0, hurry: false, ghost: null,
     chain: [], chainT: 0, banner: null, shake: 0, msg: null, muted: false, freeze: 0, flash: null, cycle: (opts.cycle || 0),
     headless: !!opts.headless, shotMode: false, staged: false, cleared: 0, deaths: 0,
+    hard: !!opts.hard,
     maxRooms: opts.maxRooms || ROOMS.length, best: 0, extends: 0,
   };
   loadRoom(0);
   return G;
 }
+// The verification bot is a mediocre player: it cannot climb, and every extra monster
+// anywhere costs it the run. Rather than let it cap what a human plays, KEEP MODE adds
+// a second wave of monsters per room. The proofs always run the default, so the
+// theorem still means what it says — and the harder game is honestly labelled.
+function keepMode() { return G && G.hard; }
 function loadRoom(i) {
   G.roomIndex = i;
   G.room = roomAt(i);
@@ -197,6 +203,19 @@ function loadRoom(i) {
     else if (c === 'w') spawnEnemy('wanderer', wx, wy);
     else if (c === 'h') spawnEnemy('hurler', wx, wy);
     else if (c === 'f') spawnEnemy('flyer', wx, wy);
+  }
+  if (G.hard) {
+    // reinforcements, dropped into the first REAL air tile of their column — spawning
+    // above the ceiling would leave them standing on the roof, unkillable
+    const extra = [['wanderer', 'wanderer'], ['wanderer', 'wanderer'], ['wanderer', 'hurler'],
+      ['wanderer', 'wanderer'], ['wanderer', 'hurler'], ['wanderer', 'flyer']][i % 6];
+    for (let k = 0; k < extra.length; k++) {
+      const x = 140 + ((k * 300 + i * 110) % (PW - 280));
+      const col = Math.max(0, Math.min(COLS - 1, Math.floor(x / TILE)));
+      let cy = 0;
+      while (cy < ROWS && solidAt(G.room, col, cy)) cy++;
+      spawnEnemy(extra[k], x, cy * TILE + TILE / 2);
+    }
   }
   G.player = {
     x: px, y: py, vx: 0, vy: 0, w: 30, h: 32, face: 1, onGround: false,
@@ -1864,6 +1883,10 @@ function drawHUD() {
   const frac = left / hurryAt();
   cx.fillStyle = '#8a7fb5'; cx.font = 'bold 10px monospace';
   cx.fillText('TIME', OX, OY + PH + 21);
+  if (G.hard) {
+    cx.fillStyle = '#ff8a5c'; cx.font = 'bold 11px monospace'; cx.textAlign = 'right';
+    cx.fillText('KEEP MODE', OX + PW, OY + PH + 36); cx.textAlign = 'left';
+  }
   const SEG = 34, barX = OX + 40, barW = PW - 40, segW = barW / SEG;
   const lit = G.hurry ? 0 : Math.ceil(frac * SEG);      // out of time means an empty bar
   for (let i = 0; i < SEG; i++) {
@@ -1956,6 +1979,9 @@ function drawTitle() {
   cx.fillText('\u2190 \u2192 / A D run    \u2191 / Z / W jump    SPACE / X bubble    P pause    M mute', 640, 634);
   cx.fillStyle = '#ffd98a'; cx.font = 'bold 14px monospace';
   cx.fillText('TRAP A MONSTER IN A BUBBLE, THEN JUMP INTO IT TO POP IT', 640, 660);
+  cx.font = 'bold 15px monospace';
+  cx.fillStyle = HARD.on ? '#ff8a5c' : '#7f93c0';
+  cx.fillText('[H]  KEEP MODE: ' + (HARD.on ? 'ON — the keep sends more' : 'off'), 640, 690);
   if (G.best > 0) {
     cx.fillStyle = '#ffe066'; cx.font = 'bold 15px monospace';
     cx.fillText('BEST  ' + G.best, 640, 666);
@@ -2101,7 +2127,8 @@ function onKey(e, down) {
   const k = e.key;
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].indexOf(k) >= 0) e.preventDefault();
   if (down && (G.screen === 'title' || G.over || G.won)) {
-    if (k === ' ' || k === 'Enter') { const b = G.best; newGame(URLSEED); G.best = b; }
+    if (k === 'h' || k === 'H') { HARD.on = !HARD.on; try { localStorage.setItem('bubblekeep.hard', HARD.on ? '1' : ''); } catch (e) { } return; }
+    if (k === ' ' || k === 'Enter') { const b = G.best; newGame(URLSEED, { hard: HARD.on }); G.best = b; }
     return;
   }
   if (down && (k === 'p' || k === 'P')) { G.screen = G.screen === 'paused' ? 'play' : 'paused'; return; }
@@ -2212,6 +2239,8 @@ const SHOTS = {
 // ------------------------------ boot ------------------------------
 const QS = new URLSearchParams(location.search);
 const URLSEED = +(QS.get('seed') || RUN_SEED) || RUN_SEED;
+const HARD = { on: false };
+try { HARD.on = QS.get('hard') === '1' || !!localStorage.getItem('bubblekeep.hard'); } catch (e) { }
 function boot() {
   cv = document.getElementById('cv');
   cx = cv.getContext('2d');
@@ -2232,8 +2261,8 @@ function boot() {
   }
   window.addEventListener('keydown', e => onKey(e, true));
   window.addEventListener('keyup', e => onKey(e, false));
-  cv.addEventListener('mousedown', () => { if (G.screen === 'title' || G.over || G.won) { const b = G.best; newGame(URLSEED); G.best = b; } });
-  newGame(URLSEED);
+  cv.addEventListener('mousedown', () => { if (G.screen === 'title' || G.over || G.won) { const b = G.best; newGame(URLSEED, { hard: HARD.on }); G.best = b; } });
+  newGame(URLSEED, { hard: HARD.on });
   G.screen = 'title';
   let last = 0;
   const loop = (ts) => {
