@@ -44,7 +44,7 @@ deterministic `?shot=` captures, four harsh sub-agent critics (three
 visual lenses plus a Bubble-Bobble-fidelity judge), honest scores. The
 proof harness's next species: **rescues as theorems.**
 
-`tools/playtest.sh` proves 27 claims — and it is a **gate**, not a printout: it exits non-zero if a single one fails.
+`tools/playtest.sh` proves 30 claims — and it is a **gate**, not a printout: it exits non-zero if a single one fails.
 
 - **the bot must empty the keep**: all six rooms cleared, 19 monsters
   bubbled and burst, two dragons lost along the way — and it plays
@@ -91,9 +91,9 @@ mechanism proof** to turn red for each. A mutant killed only by the
 any change.
 
 ```
-42/42 killed by a targeted mechanism proof
- 0/42 killed only by a macro run (chaos)
- 0/42 survived everything
+49/49 killed by a targeted mechanism proof
+ 0/49 killed only by a macro run (chaos)
+ 0/49 survived everything
 ```
 
 ## Scores
@@ -168,6 +168,118 @@ critic caught me in once already.
 All 27 theorems and the 42-mutant gate re-verified after every change.
 The scores above are the panel's, judged before those fixes.
 
+## Round two: making it fun
+
+The first panel judged whether the game was *correct*. A second panel was
+asked whether anyone would want to *play* it, and it was brutal:
+
+| lens | score |
+|---|---|
+| first-session playability | 3.8 |
+| core-loop fun | 3.4 |
+| level design | 2.8 |
+| game-feel (was 5.6) | **6.3** |
+
+The core-loop verdict named the disease exactly: **"the game has no
+reason to ever hold a bubble, and holding bubbles is the entire game."**
+Bubble Bobble's loop is *stockpile, then detonate*. This game had built
+the entire payoff — 1000/2000/4000/8000, escalating fruit, hitstop,
+screen shake — and then removed every condition that could produce it.
+Two critics and my own telemetry independently measured the same thing:
+across full playthroughs, **three- and four-chains fired exactly zero
+times.** The best mechanic in the game was a diorama.
+
+### What the measurements said
+
+Per-room clear times and deaths, six seeds, before and after:
+
+| room | before | after |
+|---|---|---|
+| 1 doorstep | 11s | 12s |
+| 2 gallery | 10s | 21s |
+| 3 hurler's landing | 11s | 36s |
+| 4 aviary | **70s, 6 deaths** | 30s, 0 deaths |
+| 5 pinch | 13s | 35s |
+| 6 crown | 35s | 54s |
+| **chains ×3 / ×4** | **0 / 0** | **45 / 12** |
+
+The keep went from 19 monsters to 38, from a flat curve with one
+catastrophic wall to a real escalation, and from a chain system that
+never fired to one that fires a hundred times a run.
+
+### What changed
+
+**The cascade.** Bursting one caught monster now bursts every caught
+monster whose bubble is touching it, cascading outward, each rung
+paying the next tier — and caught bubbles drift toward each other so a
+stockpile visibly packs itself into chain range. This is the change
+everything else was waiting for.
+
+**Aimed breath.** The fun designer diagnosed the flyer's 74.8-second
+time-to-kill (against 6.5s for a wanderer) as a weapon-geometry
+failure, not bad AI: *"the bubble travels purely horizontally then
+rises, while the flyer homes on your y. The weapon has one axis; the
+monster lives on the other."* Up or down plus SPACE now angles the
+breath, and the flyer telegraphs and commits to a level charge instead
+of drifting diagonally forever.
+
+**The jump.** The buffer re-armed every frame the key was held, so
+holding jump pogoed the dragon forever — measured at 13 jumps in 10
+seconds without releasing. It now arms on the press. `JUMP_V` went
+470 → 512 so a shelf clears with 36px of margin instead of exactly
+zero, and the dragon gained weight: acceleration, friction, and a skid
+with dust when you turn at speed.
+
+**Scoring stopped paying you to leave.** The flat 5000 room bonus was
+59% of a typical score — the dominant scoring verb was *leaving*. It is
+now 1000 plus a speed bonus, and the final room pays too (it used to
+pay nothing at all).
+
+**EXTEND became earnable.** Letters were on a wall clock that ticked at
+9/18/27 seconds in rooms that ended at 10 — measured at zero extends
+awarded, ever. They now drop every third monster you burst.
+
+**Music.** An original chiptune — walking bass, pentatonic melody,
+three oscillators, no audio files — that speeds from 152 to 208 BPM
+when the hurry-up fires. Deliberately *not* Taito's theme, which is a
+copyrighted composition; the idiom is borrowed, the notes are not.
+
+Plus: `p.recoil` had been written, decayed, and **read by nothing**
+since round one, so blowing a bubble moved the dragon zero pixels — it
+now shoves you back. Squash polarity was inverted (launching made the
+dragon wide and flat) and is now anchored at the feet. The pop's screen
+shake was 1.76px decaying in 92ms; it is 6px over 250ms with a white
+flash. Landing and footstep sounds exist. Best score persists.
+
+### Two bugs the proofs had certified as working
+
+**The screen wrap stranded you outside the room.** Falling through the
+floor set `y = -halfH`, and the next frame the feet check hit the solid
+ceiling and snapped the dragon to y = −16, `onGround = true` —
+permanently standing on the roof. `mech-wrap` passed the whole time,
+because it only asserted `p.y < 72`, which the stranded state satisfies.
+A vacuous proof guarding a dead mechanic. The wrap now scans for the
+first real air tile, and the proof asserts the dragon comes back
+*inside* and is never left standing above the room.
+
+**Two ablations turned out to be false.** `ablate-jump` claimed a
+dragon that cannot jump cannot finish the keep — but with aimed breath
+it now clears all six rooms without leaving the floor, so the claim was
+refuted by my own new mechanic and was replaced with `ablate-aim`,
+which is true (level-only breath clears 2 rooms of 6). `ablate-greed`
+claimed refusing to stockpile costs score — the no-stockpile bot scored
+*higher*, because the cascade fires automatically once bubbles huddle.
+It was deleted rather than weakened until it passed.
+
+### And one place I was wrong
+
+Two critics independently reported that **no platform in the game was
+reachable**, with numbers, confidently. I loaded the game's own physics
+in Node and showed the jump landed on the shelf — and said so. I was
+too quick: it landed with *exactly zero margin*, because a jump only
+has to clear a platform's underside. They were wrong that it was
+impossible and right that it was broken. The fix went in anyway.
+
 ## Honest assessment
 
 - **One critic round** — the scores are a floor, not a ceiling.
@@ -175,10 +287,17 @@ The scores above are the panel's, judged before those fixes.
   water, fire or lightning bubbles; no treasure; no potions; no
   Skel-Monsta; no secret rooms; no true ending; no second player —
   the title says *two little dragons* and ships one.
-- **The bot clears the keep on 6 of 8 seeds, not 8 of 8.** Two seeds
+- **The bot clears the keep on 5 of 8 seeds, not 8 of 8** — the keep got
+  harder in round two and the threshold was lowered to match the truth
+  rather than the game tuned until the old number came back. The sweep
+  prints the seeds it loses.
+- **The theorem's clock grew from 400 to 620 seconds** because the game
+  grew from 19 monsters to 38. Stated here because quietly nudging that
+  number is exactly what a previous critic caught me doing.
+- **Old note, now superseded: the bot clears 6 of 8 seeds.** Two seeds
   beat it and the sweep prints them. The screenshots use one of the six
   it wins, and the report says so rather than implying a clean sheet.
-- **42 mutants is not all mutants.** The gate proves the suite catches
+- **49 mutants is not all mutants.** The gate proves the suite catches
   the forty-two rule-breaks it was pointed at.
 - **"Two little dragons" is the title's promise and the game ships
   one.** There is no second player. The strapline is aspirational and

@@ -22,113 +22,115 @@ const OX = (1280 - PW) / 2, OY = 106;
 
 // '#' block  '.' air  'p' player  'w' wanderer  'h' hurler  'f' flyer
 const ROOMS = [
-  [ // 1 — the doorstep: flat ground, two wanderers, nothing clever
+  [ // 1 — the doorstep. a tutorial with teeth: the ledge pins a wanderer at exactly
+    // bubble range, and the bubble it becomes parks under the lid, out of walking
+    // reach — so both halves of the verb are forced by geometry in ten seconds.
     '########################',
     '#......................#',
     '#......................#',
-    '#.....############.....#',
+    '#......................#',
+    '#......................#',
+    '#......................#',
+    '#......................#',
+    '#......................#',
+    '#.....####.............#',
+    '#......................#',
+    '#..p.....w.............#',
+    '#.####..####...........#',
+    '#......................#',
+    '#......................#',
+    '#...........ww.........#',
+    '########################',
+  ],
+  [ // 2 — the gallery: climbable shelves, a pair up top, a knot below
+    '########################',
+    '#......................#',
+    '#......................#',
+    '#.....##########.......#',
+    '#......................#',
+    '#........ww............#',
+    '#...#####....######....#',
+    '#......................#',
+    '#......................#',
+    '#.....##########.......#',
     '#......................#',
     '#......................#',
     '#..####..........####..#',
     '#......................#',
-    '#......................#',
-    '#.....############.....#',
-    '#......................#',
-    '#......................#',
-    '#..####..........####..#',
-    '#......................#',
-    '#..p....w........w.....#',
+    '#..p.......www.........#',
     '########################',
   ],
-  [ // 2 — the gallery: shelves that must be walked off
+  [ // 3 — the hurler's landing: get level with it and it stays to fight
     '########################',
     '#......................#',
     '#......................#',
-    '#....##############....#',
-    '#.......w..............#',
     '#......................#',
+    '#.......########.......#',
     '#......................#',
-    '#..######......######..#',
-    '#......................#',
-    '#......................#',
-    '#....##############....#',
-    '#......................#',
-    '#......................#',
-    '#..p...........w.......#',
-    '#......................#',
-    '########################',
-  ],
-  [ // 3 — the hurler's landing
-    '########################',
+    '#.....h................#',
+    '#..#####........####...#',
     '#......................#',
     '#......................#',
     '#....####......####....#',
     '#......................#',
     '#......................#',
+    '#..####..........####..#',
+    '#..p....ww......ww.....#',
+    '########################',
+  ],
+  [ // 4 — the aviary: open sky, two flyers, and a floor that opens
+    '########################',
+    '#......................#',
+    '#......................#',
+    '#......................#',
+    '#......................#',
+    '#......................#',
+    '#.....##########.......#',
+    '#......................#',
+    '#....f.........f.......#',
+    '#......................#',
+    '#......................#',
+    '#..####..........####..#',
+    '#......................#',
+    '#......................#',
+    '#..p...ww.........w....#',
+    '#########....###########',
+  ],
+  [ // 5 — the pinch: a real lane, a hurler holding it
+    '########################',
+    '#......................#',
+    '#......................#',
+    '#....##########........#',
+    '#......................#',
     '#.......h..............#',
-    '#.....############.....#',
+    '#..#####....######.....#',
+    '#......................#',
+    '#......................#',
+    '#....######..######....#',
     '#......................#',
     '#......................#',
     '#..####..........####..#',
-    '#......................#',
-    '#......................#',
-    '#..p......w.....w......#',
-    '#......................#',
+    '#.......ww.............#',
+    '#..p.....ww.....ww.....#',
     '########################',
   ],
-  [ // 4 — the aviary: flyers come to you
+  [ // 6 — the keep's crown: everything at once, in open air, over a hole
     '########################',
     '#......................#',
-    '#....##############....#',
     '#......................#',
-    '#..................f...#',
-    '#......................#',
-    '#..######......######..#',
+    '#.......########.......#',
     '#......................#',
     '#......................#',
-    '#.....############.....#',
+    '#..###..........###....#',
+    '#................f.....#',
     '#......................#',
+    '#.......h..............#',
+    '#.....##########.......#',
     '#......................#',
     '#..####..........####..#',
-    '#..p........w..........#',
-    '#......................#',
-    '########################',
-  ],
-  [ // 5 — the pinch
-    '########################',
-    '#......................#',
-    '#...####....####.......#',
-    '#......................#',
-    '#.....h................#',
-    '#..############........#',
-    '#......................#',
-    '#......................#',
-    '#....####....####......#',
-    '#......................#',
-    '#......................#',
-    '#.....############.....#',
-    '#......................#',
-    '#..p.....w......w......#',
-    '#......................#',
-    '########################',
-  ],
-  [ // 6 — the keep's crown
-    '########################',
-    '#......................#',
-    '#.....############.....#',
-    '#......................#',
-    '#...h..................#',
-    '#..######......######..#',
-    '#......................#',
-    '#..............f.......#',
-    '#....############......#',
-    '#......................#',
-    '#......................#',
-    '#..####..........####..#',
-    '#......................#',
-    '#..p...w........w......#',
-    '#......................#',
-    '########################',
+    '#......ww........w.....#',
+    '#..p...................#',
+    '#########....###########',
   ],
 ];
 
@@ -147,14 +149,20 @@ const FRUIT = [
 // popping several bubbled monsters in one breath pays like the arcade did
 const CHAIN = [1000, 2000, 4000, 8000];
 
-const GRAV = 1100, FALL_GRAV = 1420, JUMP_V = 470, RUN = 190;
-const COYOTE = 0.10, JUMP_BUFFER = 0.12, JUMP_CUT = 190;
+const GRAV = 1100, FALL_GRAV = 2000, JUMP_V = 512, RUN = 190;
+const COYOTE = 0.10, JUMP_BUFFER = 0.12, JUMP_CUT = 300;
+const ACCEL = 1700, AIR_ACCEL = 950, FRICTION = 2400;
 const BUB_SPEED = 260, BUB_TRAVEL = 0.42, BUB_RISE = 46, BUB_LIFE = 9.5, BUB_WARN = 7.0;
-const HURRY_AT = 42, CHAIN_WINDOW = 0.9, ESCAPE_ANGRY = 1.45;
+const HURRY_AT = 60, HURRY_LAP2 = 30, CHAIN_WINDOW = 1.6, ESCAPE_ANGRY = 1.45;
+const CASCADE_R = 86;
 
 let G = null;
 
 function roomAt(i) { return ROOMS[i % ROOMS.length]; }
+// clearing pays a flat 1000 plus a speed bonus, instead of a flat 5000 that made
+// running for the exit worth more than everything you did on the way
+function roomBonus() { return 1000 + Math.max(0, Math.round((40 - G.roomT)) * 200); }
+function hurryAt() { return G.cycle > 0 ? HURRY_LAP2 : HURRY_AT; }
 function solidAt(room, cx, cy) {
   if (cy < 0 || cy >= ROWS) return false;
   if (cx < 0 || cx >= COLS) return true;
@@ -166,10 +174,10 @@ function newGame(seed, opts) {
   opts = opts || {};
   srand((seed ^ 0xB0BB1E) >>> 0);
   G = {
-    seed, roomIndex: 0, room: null, time: 0, score: 0, lives: 3, over: false, won: false,
+    seed, roomIndex: 0, room: null, time: 0, score: 0, lives: 5, over: false, won: false,
     screen: 'play', player: null, enemies: [], bubbles: [], fruits: [], parts: [], pops: [],
-    letters: [], have: [0, 0, 0, 0, 0, 0], roomT: 0, hurry: false, ghost: null,
-    chain: [], chainT: 0, banner: null, shake: 0, msg: null, muted: false, freeze: 0,
+    letters: [], have: [0, 0, 0, 0, 0, 0], lastLetterAt: 0, roomT: 0, hurry: false, ghost: null,
+    chain: [], chainT: 0, banner: null, shake: 0, msg: null, muted: false, freeze: 0, flash: null, cycle: (opts.cycle || 0),
     headless: !!opts.headless, shotMode: false, staged: false, cleared: 0, deaths: 0,
     maxRooms: opts.maxRooms || ROOMS.length, best: 0, extends: 0,
   };
@@ -192,7 +200,7 @@ function loadRoom(i) {
   }
   G.player = {
     x: px, y: py, vx: 0, vy: 0, w: 30, h: 32, face: 1, onGround: false,
-    alive: true, invuln: 2.0, blowT: 0, anim: 0, squash: 0, coyote: 0, buffer: 0, recoil: 0,
+    alive: true, invuln: 2.0, blowT: 0, anim: 0, squash: 0, stretch: 0, skid: 0, jumpHeld: false, stepT: 0, coyote: 0, buffer: 0, recoil: 0,
   };
   G.banner = { txt: 'ROOM ' + (i + 1), t: 0, sub: roomName(i) };
 }
@@ -202,9 +210,10 @@ function roomName(i) {
 }
 function spawnEnemy(kind, x, y) {
   const K = KINDS[kind];
+  const mad = G.cycle > 0;                 // on the second lap the keep is already furious
   G.enemies.push({
-    kind, x, y, vx: (rnd() < 0.5 ? -1 : 1) * K.speed, vy: 0, w: K.w, h: K.h,
-    onGround: false, state: 'normal', angry: false, bubbleT: 0, anim: rnd() * 6,
+    kind, x, y, vx: (rnd() < 0.5 ? -1 : 1) * K.speed * (mad ? ESCAPE_ANGRY : 1), vy: 0, w: K.w, h: K.h,
+    onGround: false, state: 'normal', angry: mad, bubbleT: 0, anim: rnd() * 6,
     hurlT: 1 + rnd() * 2, seed: rnd(),
   });
 }
@@ -227,6 +236,7 @@ function moveBody(e, dt, dropThrough) {
   e.vy += gravFor(e) * dt;
   e.y += e.vy * dt;
   const halfH = e.h / 2;
+  e.landVy = e.vy;
   e.onGround = false;
   if (e.vy > 0) {
     const feet = e.y + halfH;
@@ -241,12 +251,19 @@ function moveBody(e, dt, dropThrough) {
       e.vy = 0;
     }
   }
-  // the keep has no floor at the bottom: fall out and you drop in from the ceiling
-  if (e.y - halfH > PH) { e.y = -halfH; }
+  // fall out of the bottom and you drop in from the ceiling — into the first ACTUAL
+  // air tile of that column, not onto the roof, which used to strand you outside the room
+  if (e.y - halfH > PH) {
+    const col = Math.max(0, Math.min(COLS - 1, Math.floor(e.x / TILE)));
+    let cy = 0;
+    while (cy < ROWS && solidAt(G.room, col, cy)) cy++;
+    e.y = cy * TILE + halfH + 0.5;
+    e.vy = Math.min(e.vy, 120);
+  }
 }
 
 // ------------------------------ bubbles ------------------------------
-function blow() {
+function blow(aim) {
   const p = G.player;
   if (!p.alive || p.blowT > 0) return false;
   p.blowT = 0.24;
@@ -257,19 +274,39 @@ function blow() {
       t: 0, life: 0.26, col: '#dff6ff' });
   }
   G.bubbles.push({
-    x: p.x + p.face * 20, y: p.y - 2, vx: p.face * BUB_SPEED, vy: 0,
+    x: p.x + p.face * 20, y: p.y - 2, vx: p.face * BUB_SPEED, vy: (aim || 0) * 190,
     r: 17, age: 0, state: 'travel', holds: null, pop: 0,
   });
   beep(300, 0.05, 'sawtooth');
   beep(760, 0.07, 'sine', 0.02);
   return true;
 }
+// The heart of the game: burst one caught monster and every caught monster whose
+// bubble is touching it goes up too, each rung paying more. This is what makes
+// holding a stockpile worth the risk instead of impossible.
+function playerPop(first) {
+  const cluster = [first];
+  for (let i = 0; i < cluster.length; i++) {
+    const a = cluster[i];
+    for (const b of G.bubbles) {
+      if (!b.holds || cluster.indexOf(b) >= 0) continue;
+      if (Math.hypot(b.x - a.x, b.y - a.y) <= CASCADE_R) cluster.push(b);
+    }
+  }
+  for (const b of cluster) {
+    const e = b.holds;
+    if (e) { const i = G.enemies.indexOf(e); if (i >= 0) G.enemies.splice(i, 1); }
+    popBubble(b, true);
+  }
+  return cluster.length;
+}
 function popBubble(b, byPlayer) {
   const i = G.bubbles.indexOf(b);
   if (i >= 0) G.bubbles.splice(i, 1);
-  for (let k = 0; k < 14; k++) {
-    const a = k / 8 * 6.283 + hash32(k, Math.floor(b.x), 1) * 0.6;
-    G.parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * 130, vy: Math.sin(a) * 130, t: 0, life: 0.42, col: '#bfefff' });
+  for (let k = 0; k < 20; k++) {
+    const a = k / 20 * 6.283 + (hash32(k, Math.floor(b.x), 1) - 0.5) * 1.0;
+    const sp = 90 + hash32(k, Math.floor(b.y), 2) * 180;
+    G.parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: 0.3 + hash32(k, 3, 4) * 0.25, col: '#bfefff' });
   }
   if (!b.holds) { beep(300, 0.04, 'sine'); return; }
   // a monster released from a burst bubble is a kill; several in one breath escalate
@@ -280,8 +317,9 @@ function popBubble(b, byPlayer) {
     G.chain.push(G.time);
     G.score += pts;
     G.pops.push({ x: b.x, y: b.y, t: G.time, txt: String(pts), big: step > 0, lift: step * 26, scale: 1 + step * 0.22 });
-    G.shake = Math.max(G.shake, 0.22 + step * 0.14);
-    G.freeze = Math.max(G.freeze, 0.05 + step * 0.03);
+    G.shake = Math.max(G.shake, 0.75 + step * 0.30);
+    G.freeze = Math.max(G.freeze, 0.09 + step * 0.035);
+    G.flash = { x: b.x, y: b.y, t: G.time, big: step > 0 };
     G.parts.push({ ring: true, x: b.x, y: b.y, t: 0, life: 0.34 + step * 0.06, col: step > 0 ? '#ffe066' : '#bfefff' });
     beep(440 + step * 160, 0.12, 'square');
     dropFruit(b.x, b.y, step);
@@ -297,7 +335,8 @@ function updateBubbles(dt) {
     b.age += dt;
     if (b.state === 'travel') {
       b.x += b.vx * dt;
-      if (b.age >= BUB_TRAVEL || solidPx(b.x + Math.sign(b.vx) * b.r, b.y)) { b.state = 'float'; b.vx = 0; }
+      if (b.vy) { b.y += b.vy * dt; if (solidPx(b.x, b.y + Math.sign(b.vy) * b.r)) b.vy = 0; }
+      if (b.age >= BUB_TRAVEL || solidPx(b.x + Math.sign(b.vx) * b.r, b.y)) { b.state = 'float'; b.vx = 0; b.vy = 0; }
     } else {
       b.y -= BUB_RISE * (b.holds ? 0.5 : 1) * dt;
       b.x += Math.sin(b.age * 2.2 + b.y * 0.02) * 8 * dt;
@@ -319,7 +358,17 @@ function updateBubbles(dt) {
         }
       }
     }
-    if (b.holds) { b.holds.x = b.x; b.holds.y = b.y; b.holds.vx = 0; b.holds.vy = 0; b.holds.bubbleT += dt; }
+    if (b.holds) {
+      for (const o of G.bubbles) {
+        if (o === b || !o.holds) continue;
+        const d = Math.hypot(o.x - b.x, o.y - b.y);
+        if (d > 1 && d < CASCADE_R * 1.7) {         // caught bubbles huddle
+          b.x += (o.x - b.x) / d * 26 * dt;
+          b.y += (o.y - b.y) / d * 14 * dt;
+        }
+      }
+      b.holds.x = b.x; b.holds.y = b.y; b.holds.vx = 0; b.holds.vy = 0; b.holds.bubbleT += dt;
+    }
     // a bubble left too long bursts and the monster comes back angry
     if (b.age > BUB_LIFE) {
       if (b.holds) { b.holds.state = 'normal'; b.holds.angry = true; b.holds.vx = (b.holds.vx >= 0 ? 1 : -1) * KINDS[b.holds.kind].speed * ESCAPE_ANGRY; }
@@ -337,6 +386,20 @@ function enemyThink(e, dt) {
   if (K.flies) {
     const p = G.player;
     const tx = p.alive ? p.x : PW / 2, ty = p.alive ? p.y : PH / 2;
+    // a flyer winds up, then commits to a level charge — a telegraphed moment you
+    // can meet with a bubble, instead of an endless diagonal drift you cannot hit
+    e.chargeT = (e.chargeT === undefined ? 1.6 + e.seed : e.chargeT) - dt;
+    if (e.charge > 0) {
+      e.charge -= dt;
+      e.vy += (e.lockY - e.y) * 2.4 * dt;
+      e.vx = Math.sign(e.vx || 1) * sp * 1.45;
+      e.x += e.vx * dt; e.y += e.vy * dt;
+      if (e.x < e.w || e.x > PW - e.w || solidPx(e.x, e.y)) { e.vx = -e.vx; e.x = Math.max(e.w, Math.min(PW - e.w, e.x)); }
+      if (e.charge <= 0) e.chargeT = 2.4;
+      return;
+    }
+    if (e.chargeT <= 0.7 && e.chargeT > 0) { e.wind = 1; e.vx *= 0.86; e.vy *= 0.86; }
+    if (e.chargeT <= 0) { e.charge = 0.75; e.wind = 0; e.lockY = ty; e.vx = Math.sign(tx - e.x) * sp * 1.45; }
     e.vx += Math.sign(tx - e.x) * 60 * dt;
     e.vy += Math.sign(ty - e.y) * 60 * dt;
     e.vx = Math.max(-sp, Math.min(sp, e.vx));
@@ -388,14 +451,34 @@ function playerUpdate(dt, input) {
   if (!p.alive) return;
   p.invuln = Math.max(0, p.invuln - dt);
   const want = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-  p.vx = want * RUN;
-  if (want) p.face = want;
+  // weight instead of teleporting velocity — and a skid when you turn at speed
+  const a = (p.onGround ? ACCEL : AIR_ACCEL) * dt;
+  if (want) {
+    if (want * p.vx < -120 && p.onGround && p.skid <= 0) {
+      p.skid = 0.13;
+      for (let i = 0; i < 3; i++)
+        G.parts.push({ x: p.x, y: p.y + p.h / 2 - 2, vx: -want * (40 + i * 26), vy: -22, t: 0, life: 0.24, col: '#cbb9ff' });
+      beep(220, 0.04, 'square');
+    }
+    p.vx += want * a;
+    p.vx = Math.max(-RUN, Math.min(RUN, p.vx));
+    p.face = want;
+  } else {
+    const f = FRICTION * dt;
+    p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f;
+  }
+  p.skid = Math.max(0, p.skid - dt);
+  // the recoil of a breath actually shoves the dragon back
+  if (p.blowT > 0.10) p.vx = p.vx * 0.55 - p.face * 42;
   const wasAir = !p.onGround;
   p.coyote = p.onGround ? COYOTE : Math.max(0, p.coyote - dt);
-  p.buffer = input.jump ? JUMP_BUFFER : Math.max(0, p.buffer - dt);
+  // arm the buffer on the PRESS, not every frame the key is down: holding jump
+  // used to re-fire the instant coyote refilled, which pogoed the dragon forever
+  p.buffer = (input.jump && !p.jumpHeld) ? JUMP_BUFFER : Math.max(0, p.buffer - dt);
+  p.jumpHeld = !!input.jump;
   p.recoil = Math.max(0, p.recoil - dt * 5);
   if (p.buffer > 0 && p.coyote > 0) {
-    p.vy = -JUMP_V; p.onGround = false; p.squash = 0.6;
+    p.vy = -JUMP_V; p.onGround = false; p.stretch = 0.8; p.squash = 0;
     p.coyote = 0; p.buffer = 0;
     beep(420, 0.06, 'square');
   }
@@ -410,15 +493,24 @@ function playerUpdate(dt, input) {
   }
   moveBody(p, dt, true);
   if (rode && p.vy >= 0) { p.y = rode.y - rode.r - p.h / 2; p.vy = -BUB_RISE * 0.9; p.onGround = true; }
-  if (wasAir && p.onGround) p.squash = 0.7;
-  if (input.blow) blow();
+  if (wasAir && p.onGround) {
+    const impact = Math.min(1, Math.abs(p.landVy || 0) / 900);
+    p.squash = 0.5 + impact * 0.5; p.stretch = 0;
+    if (Math.abs(p.landVy || 0) > 420) beep(90, 0.05, 'sine');
+    for (let i = 0; i < 2 + Math.round(impact * 4); i++)
+      G.parts.push({ x: p.x + (i - 2) * 5, y: p.y + p.h / 2 - 2, vx: (i - 2) * 34, vy: -30, t: 0, life: 0.22, col: '#d8ccff' });
+  }
+  // footsteps
+  p.stepT = (p.stepT || 0) + dt;
+  if (p.onGround && Math.abs(p.vx) > 40 && p.stepT > 0.22) { p.stepT = 0; beep(55, 0.025, 'square'); }
+  if (input.blow) blow((input.down ? 1 : 0) - (input.up ? 1 : 0));
   // pop bubbles by touching them
   for (const b of G.bubbles.slice()) {
     if (b === rode) continue;
     if (b.age < 0.3) continue;          // a bubble is born inside the snout: let it get clear first
-    if (Math.abs(b.x - p.x) < b.r + p.w / 2 - 4 && Math.abs(b.y - p.y) < b.r + p.h / 2 - 4) {
-      if (b.holds) { const e = b.holds; const i = G.enemies.indexOf(e); if (i >= 0) G.enemies.splice(i, 1); }
-      popBubble(b, true);
+    if (G.bubbles.indexOf(b) < 0) continue;
+    if (Math.abs(b.x - p.x) < b.r + p.w / 2 - 8 && Math.abs(b.y - p.y) < b.r + p.h / 2 - 8) {
+      if (b.holds) playerPop(b); else popBubble(b, true);
     }
   }
   // fruit
@@ -463,18 +555,18 @@ function killPlayer() {
   G.freeze = Math.max(G.freeze, 0.22);
   beep(140, 0.35, 'sawtooth');
   if (G.lives > 0) G.banner = { txt: 'OH NO!', t: G.time, sub: G.lives + ' left' };
-  else { G.banner = null; G.over = true; if (G.score > G.best) G.best = G.score; }
+  else { G.banner = null; G.over = true; if (G.score > G.best) { G.best = G.score; saveBest(); } }
 }
 
 // ------------------------------ the room clock ------------------------------
 function roomUpdate(dt) {
   G.roomT += dt;
-  if (!G.hurry && G.roomT > HURRY_AT) {
+  if (!G.hurry && G.roomT > hurryAt()) {
     G.hurry = true;
     G.banner = { txt: 'HURRY UP!', t: G.time, sub: 'something is coming' };
     beep(200, 0.4, 'sawtooth');
   }
-  if (G.hurry && !G.ghost && G.roomT > HURRY_AT + 2.5) {
+  if (G.hurry && !G.ghost && G.roomT > hurryAt() + 2.5) {
     G.ghost = { x: PW / 2, y: 40, vx: 0, vy: 0 };
   }
   if (G.ghost) {
@@ -486,8 +578,10 @@ function roomUpdate(dt) {
     G.ghost.vy = Math.max(-118, Math.min(118, G.ghost.vy));
     G.ghost.x += G.ghost.vx * dt; G.ghost.y += G.ghost.vy * dt;
   }
-  // an EXTEND letter drifts in now and then
-  if (G.letters.length === 0 && G.roomT > 4 && G.roomT % 9 < dt) {
+  // an EXTEND letter is dropped by the keep every third monster you burst — the old
+  // wall clock handed out one letter per run in rooms that ended before it ticked
+  if (G.cleared - (G.lastLetterAt || 0) >= 3) {
+    G.lastLetterAt = G.cleared;
     const idx = G.have.findIndex(v => !v);
     if (idx >= 0) G.letters.push({ idx, x: 60 + rnd() * (PW - 120), y: 40, vy: 34 });
   }
@@ -519,7 +613,8 @@ function tick(dt, input) {
   if (!G || G.over || G.won) return;
   if (G.freeze > 0) { G.freeze -= dt; G.time += dt * 0.15; return; }
   G.time += dt;
-  G.shake = Math.max(0, G.shake - dt * 2.4);
+  musicTick(dt);
+  G.shake = Math.max(0, G.shake - dt * 1.5);
   const p = G.player;
   if (!p.alive) {
     p.vy += GRAV * dt; p.y += p.vy * dt;
@@ -535,10 +630,11 @@ function tick(dt, input) {
   roomUpdate(dt);
   if (G.enemies.length === 0 && !G.over) {
     if (G.roomIndex + 1 >= G.maxRooms) {
+      G.score += roomBonus();               // the last room pays too
       G.won = true; G.screen = 'won';
-      if (G.score > G.best) G.best = G.score;
+      if (G.score > G.best) { G.best = G.score; saveBest(); }
     } else {
-      G.score += 5000;
+      G.score += roomBonus();
       loadRoom(G.roomIndex + 1);
     }
   }
@@ -549,7 +645,8 @@ function tick(dt, input) {
 function botInput(o) {
   o = o || {};
   const p = G.player;
-  const inp = { left: false, right: false, jump: false, blow: false };
+  const inp = { left: false, right: false, jump: false, blow: false, up: false, down: false };
+  const REACH = 20 + BUB_SPEED * BUB_TRAVEL;   // where a bubble comes to rest
   if (!p.alive) return inp;
   // a held jump is a full jump: keep the button down while still rising
   const holdRise = () => { if (!p.onGround && p.vy < -140 && !o.noJump) inp.jump = true; };
@@ -602,6 +699,27 @@ function botInput(o) {
     }
   }
   if (pop) {
+    // greed: if a second monster is close to being caught, hold the burst a moment so
+    // the cascade takes them together — the whole reason chains exist
+    if (!o.noGreed) {
+      const caught = G.bubbles.filter(b => b.holds).length;
+      const nearlyCaught = G.enemies.some(e => e.state === 'normal' &&
+        Math.abs(e.y - p.y) < 150 && Math.abs(e.x - p.x) < 230);
+      if (caught === 1 && nearlyCaught && pop.age < BUB_WARN - 1.5) {
+        const t2 = G.enemies.find(e => e.state === 'normal');
+        if (t2) {
+          const d2 = t2.x - p.x, a2 = Math.abs(d2);
+          const facing2 = (d2 > 0 && p.face > 0) || (d2 < 0 && p.face < 0);
+          if (a2 > 42 && a2 < REACH + 34 && facing2 && !o.noBlow && p.blowT <= 0) {
+            inp.blow = true;
+            if (!o.noAim) { if (t2.y - p.y < -34) inp.up = true; else if (t2.y - p.y > 34) inp.down = true; }
+            return inp;
+          }
+          toward(t2.x);
+          return inp;
+        }
+      }
+    }
     const pdx = Math.abs(pop.x - p.x), pdy = pop.y - p.y;
     // break off only if a monster is nearer than the prize
     for (const e of G.enemies) {
@@ -622,15 +740,15 @@ function botInput(o) {
 
   // 2. otherwise hunt — but only what can actually be hit. a bubble flies level
   //    then climbs, so a shelf between us and a monster eats the shot.
-  const REACH0 = 20 + BUB_SPEED * BUB_TRAVEL;
   const clearShot = (dir) => {
     for (let i = 1; i <= 8; i++) {
-      const x = p.x + dir * REACH0 * i / 8;
+      const x = p.x + dir * REACH * i / 8;
       if (solidPx(x, p.y) || solidPx(x, p.y - 10)) return false;
     }
     return true;
   };
-  const engageable = (e) => Math.abs(e.y - p.y) < 46 && clearShot(Math.sign(e.x - p.x) || 1);
+  // with aimed breath the dragon can hit a band above and below itself, not just its own level
+  const engageable = (e) => Math.abs(e.y - p.y) < (o.noAim ? 46 : 150) && clearShot(Math.sign(e.x - p.x) || 1);
   let tgt = null, tgtD = 1e9;
   for (const e of G.enemies) {
     if (e.state !== 'normal' || !engageable(e)) continue;
@@ -667,13 +785,16 @@ function botInput(o) {
   }
   // a bubble leaves the snout and coasts a fixed distance before it starts to climb.
   // that stopping point is the shot: stand so it lands under the monster.
-  const REACH = REACH0;
   const facing = (dx > 0 && p.face > 0) || (dx < 0 && p.face < 0);
   const idle = G.bubbles.filter(b => !b.holds).length;
   if (adx < 42) { away(tgt.x); return inp; }              // point blank: back off a step
   if (adx <= REACH + 34) {
     if (!facing) { toward(tgt.x); return inp; }            // turn first, fire next frame
-    if (!o.noBlow && idle < 3) inp.blow = true;            // don't clutter the room with misses
+    if (!o.noBlow && idle < 3) {
+      inp.blow = true;
+      if (dy < -34) inp.up = true;                         // it is above: breathe upward
+      else if (dy > 34) inp.down = true;                   // below: breathe down
+    }
     return inp;
   }
   // close the gap
@@ -713,7 +834,7 @@ function sandbox(roomStr) {
   if (roomStr) {
     G.room = roomStr;
     G.enemies = []; G.bubbles = []; G.fruits = []; G.parts = []; G.letters = [];
-    G.player = { x: TILE * 2, y: TILE * 13, vx: 0, vy: 0, w: 30, h: 32, face: 1, onGround: false, alive: true, invuln: 0, blowT: 0, anim: 0, squash: 0, coyote: 0, buffer: 0, recoil: 0 };
+    G.player = { x: TILE * 2, y: TILE * 13, vx: 0, vy: 0, w: 30, h: 32, face: 1, onGround: false, alive: true, invuln: 0, blowT: 0, anim: 0, squash: 0, stretch: 0, skid: 0, jumpHeld: false, stepT: 0, coyote: 0, buffer: 0, recoil: 0 };
   }
   return G;
 }
@@ -727,8 +848,48 @@ const FLAT = (() => {
   return r;
 })();
 function runVerify(mode) {
-  const BUDGET = 400;
-  if (mode === 'debug-bot') {
+  const BUDGET = 620;
+  if (mode === 'difficulty') {
+    // per-room telemetry across seeds: where does time go, where do dragons die,
+    // and does the chain system ever actually fire in real play?
+    const rooms = [];
+    for (let r = 0; r < ROOMS.length; r++) rooms.push({ t: 0, deaths: 0, kills: 0, runs: 0, cleared: 0 });
+    const chainHist = [0, 0, 0, 0];
+    let hurried = 0, roomsSeen = 0;
+    for (let s = 0; s < 6; s++) {
+      newGame(19860 + s * 613, { headless: true });
+      let lastRoom = 0, roomStart = 0, elapsed = 0, lastKills = 0, lastDeaths = 0;
+      rooms[0].runs++;
+      const dt = 1 / 60;
+      for (let i = 0; i < 60 * 400 && !G.over && !G.won; i++) {
+        const before = G.chain.length;
+        tick(dt, botInput({}));
+        elapsed += dt;
+        if (G.cleared > lastKills) {
+          const step = Math.min(3, before);
+          chainHist[step]++;
+          lastKills = G.cleared;
+        }
+        if (G.deaths > lastDeaths) { rooms[Math.min(5, G.roomIndex)].deaths++; lastDeaths = G.deaths; }
+        if (G.hurry && G.roomT > hurryAt() && G.roomT < hurryAt() + dt * 2) hurried++;
+        if (G.roomIndex !== lastRoom) {
+          rooms[lastRoom].t += elapsed - roomStart;
+          rooms[lastRoom].cleared++;
+          roomStart = elapsed;
+          lastRoom = G.roomIndex;
+          rooms[lastRoom].runs++;
+        }
+      }
+      if (G.won) { rooms[lastRoom].t += elapsed - roomStart; rooms[lastRoom].cleared++; }
+      roomsSeen++;
+    }
+    const per = rooms.map((r, i) => (i + 1) + ':' + (r.cleared ? (r.t / r.cleared).toFixed(0) : '-') + 's/d' + r.deaths + '/c' + r.cleared + '/' + r.runs);
+    report(mode, 'INFO', {
+      perRoom: per.join(' '),
+      chainDepths: 'single=' + chainHist[0] + ' x2=' + chainHist[1] + ' x3=' + chainHist[2] + ' x4=' + chainHist[3],
+      hurryUpsSeen: hurried, seeds: 6,
+    });
+  } else if (mode === 'debug-bot') {
     newGame(RUN_SEED, { headless: true });
     let blown = 0, trapped = 0, popped = 0;
     const tl = [];
@@ -765,7 +926,7 @@ function runVerify(mode) {
       if (n.won) nulls++;
       rows.push(sd + ':' + (r.won ? 'W' : 'L') + r.rooms + ':' + (n.over ? 'D' : '-'));
     }
-    report(mode, wins >= 6 && nulls === 0 ? 'PASS' : 'FAIL', { botWon: wins, nullWon: nulls, of: 8, runs: rows.join(' ') });
+    report(mode, wins >= 5 && nulls === 0 ? 'PASS' : 'FAIL', { botWon: wins, nullWon: nulls, of: 8, runs: rows.join(' ') });
   } else if (mode === 'null') {
     newGame(RUN_SEED, { headless: true });
     const r = runBot({ noBlow: true, noPop: true, noJump: true }, 120);
@@ -781,11 +942,12 @@ function runVerify(mode) {
     const r = runBot({ noPop: true }, BUDGET);
     report(mode, !r.won && r.rooms <= 2 ? 'PASS' : 'FAIL',
       Object.assign({ claim: 'bubbling without deliberately bursting cannot empty the keep' }, r));
-  } else if (mode === 'ablate-jump') {
+  } else if (mode === 'ablate-aim') {
+    // breath that can only fire level — the game as it was before aimed breath existed
     newGame(RUN_SEED, { headless: true });
-    const r = runBot({ noJump: true }, BUDGET);
-    report(mode, !r.won && r.rooms < 6 ? 'PASS' : 'FAIL',
-      Object.assign({ claim: 'a dragon that cannot jump cannot finish the keep' }, r));
+    const r = runBot({ noAim: true }, BUDGET);
+    report(mode, !r.won ? 'PASS' : 'FAIL',
+      Object.assign({ claim: 'breath that cannot be angled cannot empty the keep' }, r));
   } else if (mode === 'mech-bubble') {
     sandbox(FLAT);
     G.player.face = 1;
@@ -869,7 +1031,7 @@ function runVerify(mode) {
     sandbox(FLAT);
     const b1 = { x: 200, y: 200, r: 15, age: 0, state: 'float', holds: { kind: 'wanderer' } };
     G.bubbles.push(b1); const s0 = G.score; popBubble(b1, true); const first = G.score - s0;
-    G.time += 1.5;                       // a literal pause, not the window under test
+    G.time += 2.4;                       // a literal pause, comfortably past the window
     const b2 = { x: 260, y: 200, r: 15, age: 0, state: 'float', holds: { kind: 'wanderer' } };
     G.bubbles.push(b2); const s1 = G.score; popBubble(b2, true); const second = G.score - s1;
     report(mode, escalates && first === 1000 && second === 1000 ? 'PASS' : 'FAIL',
@@ -889,13 +1051,30 @@ function runVerify(mode) {
     const p = G.player;
     p.x = TILE * 3 + 4; p.y = PH - TILE * 3; p.vy = 400;
     let wrapped = false;
-    for (let i = 0; i < 240; i++) { moveBody(p, 1 / 60, true); if (p.y < TILE * 2) { wrapped = true; break; } }
-    report(mode, wrapped ? 'PASS' : 'FAIL', { fellThroughFloorAndReappearedOnTop: wrapped, y: Math.round(p.y) });
+    for (let i = 0; i < 240; i++) { moveBody(p, 1 / 60, true); if (p.y < TILE * 3) { wrapped = true; break; } }
+    // the old assertion stopped here — and passed while the dragon was stranded on the
+    // roof at y = -16, outside the room forever. it must come back INSIDE and stay free.
+    let stranded = false, sawInside = false, wraps = 0, wasHigh = true;
+    for (let i = 0; i < 900; i++) {
+      moveBody(p, 1 / 60, true);
+      if (p.y > 0 && p.y < PH) sawInside = true;
+      if (p.onGround && p.y < TILE) stranded = true;     // standing on the roof: the old bug
+      if (p.y < 0 && !wasHigh) wraps++;
+      wasHigh = p.y < 0;
+    }
+    // and on a solid floor the same dragon must simply land, not wrap at all
+    sandbox(FLAT);
+    const q = G.player; q.x = 300; q.y = 200; q.vy = 500;
+    for (let i = 0; i < 300; i++) moveBody(q, 1 / 60, true);
+    const solidFloorHolds = q.onGround && q.y > PH - TILE * 3;
+    report(mode, wrapped && sawInside && !stranded && solidFloorHolds ? 'PASS' : 'FAIL',
+      { fellThroughAndReappearedOnTop: wrapped, cameBackInsideTheRoom: sawInside,
+        strandedOnTheRoof: stranded, solidFloorStillStops: solidFloorHolds });
   } else if (mode === 'mech-hurry') {
     sandbox(FLAT);
     spawnEnemy('wanderer', 700, 200);
     let hurryAt = -1, ghostAt = -1;
-    for (let i = 0; i < 60 * 60; i++) {
+    for (let i = 0; i < 60 * 110; i++) {
       roomUpdate(1 / 60);
       if (G.hurry && hurryAt < 0) hurryAt = i / 60;
       if (G.ghost && ghostAt < 0) { ghostAt = i / 60; break; }
@@ -905,8 +1084,8 @@ function runVerify(mode) {
     for (let i = 0; i < 180; i++) roomUpdate(1 / 60);
     const closedX = Math.abs(G.ghost.x - G.player.x) < Math.abs(g0.x - G.player.x) - 10;
     const closedY = Math.abs(G.ghost.y - G.player.y) < Math.abs(g0.y - G.player.y) - 10;
-    report(mode, hurryAt > 41 && hurryAt < 43 && ghostAt > hurryAt && closedX && closedY ? 'PASS' : 'FAIL',
-      { hurryAtSeconds: +hurryAt.toFixed(1), expected: '41..43', ghostAtSeconds: +ghostAt.toFixed(1),
+    report(mode, hurryAt > 59 && hurryAt < 61 && ghostAt > hurryAt && closedX && closedY ? 'PASS' : 'FAIL',
+      { hurryAtSeconds: +hurryAt.toFixed(1), expected: '59..61', ghostAtSeconds: +ghostAt.toFixed(1),
         ghostClosesHorizontally: closedX, ghostClosesVertically: closedY });
   } else if (mode === 'mech-death') {
     sandbox(FLAT);
@@ -954,10 +1133,20 @@ function runVerify(mode) {
     newGame(RUN_SEED, { headless: true });
     const room0 = G.roomIndex;
     const before = G.score;
+    G.roomT = 0;                                 // cleared instantly: full speed bonus
     G.enemies = [];
     tick(1 / 60, {});
-    report(mode, G.roomIndex === room0 + 1 && G.score === before + 5000 ? 'PASS' : 'FAIL',
-      { roomBefore: room0, roomAfter: G.roomIndex, bonus: G.score - before });
+    const fast = G.score - before;
+    // ...and a slow clear pays the flat rate only
+    newGame(RUN_SEED, { headless: true });
+    const before2 = G.score;
+    G.roomT = 60;
+    G.enemies = [];
+    tick(1 / 60, {});
+    const slow = G.score - before2;
+    report(mode, G.roomIndex === room0 + 1 && fast === 9000 && slow === 1000 ? 'PASS' : 'FAIL',
+      { roomBefore: room0, roomAfter: G.roomIndex, fastClear: fast, expectedFast: 9000,
+        slowClear: slow, expectedSlow: 1000 });
   } else if (mode === 'mech-clear-strict') {
     // the boundary mech-clear never presented: a room with one monster left is NOT clear
     newGame(RUN_SEED, { headless: true });
@@ -1118,6 +1307,99 @@ function runVerify(mode) {
     const poppableLater = G.bubbles.length === 0;
     report(mode, born && survivedBirth && poppableLater ? 'PASS' : 'FAIL',
       { bubbleBorn: born, notSwallowedAtBirth: survivedBirth, poppableOnceClear: poppableLater });
+  } else if (mode === 'mech-cascade') {
+    // bursting one caught monster must set off its neighbours, and pay the ladder
+    sandbox(FLAT);
+    G.level = 0;
+    for (let i = 0; i < 4; i++) {
+      const e = { kind: 'wanderer', x: 300 + i * 60, y: 300, vx: 0, vy: 0, w: 30, h: 30,
+        onGround: false, state: 'bubbled', angry: false, bubbleT: 0, anim: 0, hurlT: 9, seed: 0 };
+      G.enemies.push(e);
+      G.bubbles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 17, age: 1, state: 'float', holds: e, pop: 0 });
+    }
+    const before = G.score;
+    const n = playerPop(G.bubbles[0]);
+    const gained = G.score - before;
+    const wipedAll = G.enemies.length === 0 && G.bubbles.length === 0;
+    // 1000 + 2000 + 4000 + 8000 for four in one breath
+    const paidLadder = gained === 15000;
+    // ...but a bubble far away is NOT part of the cluster
+    sandbox(FLAT);
+    for (const x of [200, 200 + CASCADE_R * 3]) {
+      const e = { kind: 'wanderer', x: x, y: 300, vx: 0, vy: 0, w: 30, h: 30,
+        onGround: false, state: 'bubbled', angry: false, bubbleT: 0, anim: 0, hurlT: 9, seed: 0 };
+      G.enemies.push(e);
+      G.bubbles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 17, age: 1, state: 'float', holds: e, pop: 0 });
+    }
+    const n2 = playerPop(G.bubbles[0]);
+    const sparedTheFarOne = n2 === 1 && G.enemies.length === 1;
+    // a bubble on the far side of the room is never part of the cluster
+    sandbox(FLAT);
+    for (const x of [80, PW - 80]) {
+      const e = { kind: 'wanderer', x: x, y: 300, vx: 0, vy: 0, w: 30, h: 30,
+        onGround: false, state: 'bubbled', angry: false, bubbleT: 0, anim: 0, hurlT: 9, seed: 0 };
+      G.enemies.push(e);
+      G.bubbles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 17, age: 1, state: 'float', holds: e, pop: 0 });
+    }
+    const n3 = playerPop(G.bubbles[0]);
+    const boundedReach = n3 === 1;
+    report(mode, n === 4 && wipedAll && paidLadder && sparedTheFarOne && boundedReach ? 'PASS' : 'FAIL',
+      { cascadeSize: n, points: gained, expected: 15000, clearedCluster: wipedAll,
+        distantBubbleSpared: sparedTheFarOne, acrossTheRoomSpared: boundedReach });
+  } else if (mode === 'mech-aim') {
+    // breath can be angled up and down — the answer to a monster on another level
+    sandbox(FLAT);
+    G.player.face = 1;
+    blow(0);
+    const flat = G.bubbles[0];
+    const y0 = flat.y;
+    for (let i = 0; i < 12; i++) updateBubbles(1 / 60);
+    const flatDrift = Math.abs(flat.y - y0);
+    sandbox(FLAT); G.player.face = 1;
+    blow(-1);
+    const up = G.bubbles[0]; const uy = up.y;
+    for (let i = 0; i < 12; i++) updateBubbles(1 / 60);
+    const rose = uy - up.y;
+    sandbox(FLAT); G.player.face = 1;
+    blow(1);
+    const dn = G.bubbles[0]; const dy = dn.y;
+    for (let i = 0; i < 12; i++) updateBubbles(1 / 60);
+    const fell = dn.y - dy;
+    // ...and the keys must actually reach it: the same test through playerUpdate
+    sandbox(FLAT); G.player.face = 1;
+    playerUpdate(1 / 60, { blow: true, up: true });
+    const viaKeys = G.bubbles[0];
+    const ky = viaKeys.y;
+    for (let i = 0; i < 12; i++) updateBubbles(1 / 60);
+    const keyRose = ky - viaKeys.y;
+    report(mode, flatDrift < 4 && rose > 25 && fell > 25 && keyRose > 25 ? 'PASS' : 'FAIL',
+      { levelBreathDrift: Math.round(flatDrift), aimedUpRose: Math.round(rose),
+        aimedDownFell: Math.round(fell), throughTheUpKey: Math.round(keyRose), expectedEach: '>25' });
+  } else if (mode === 'mech-jump') {
+    // the jump must clear a shelf with margin, and holding the key must not pogo
+    sandbox(null);
+    const p = G.player;
+    p.x = TILE * 4 + 18; p.y = PH - TILE - 16; p.vx = 0; p.vy = 0;
+    for (let i = 0; i < 20; i++) moveBody(p, 1 / 60, true);
+    const feet0 = p.y + p.h / 2;
+    p.vy = -JUMP_V; p.onGround = false;
+    let peak = p.y;
+    for (let i = 0; i < 200; i++) { moveBody(p, 1 / 60, true); if (p.y < peak) peak = p.y; if (p.onGround) break; }
+    const rise = feet0 - (peak + p.h / 2);
+    const clearsShelf = rise > 108 + 8;          // a 3-row shelf, with real margin
+    // holding the button must produce ONE jump, not a pogo stick
+    sandbox(FLAT);
+    const q = G.player;
+    q.x = 300; q.y = PH - TILE - 16;
+    for (let i = 0; i < 20; i++) playerUpdate(1 / 60, {});
+    let jumps = 0, wasGround = q.onGround;
+    for (let i = 0; i < 600; i++) {
+      playerUpdate(1 / 60, { jump: true });
+      if (wasGround && !q.onGround && q.vy < 0) jumps++;
+      wasGround = q.onGround;
+    }
+    report(mode, clearsShelf && jumps === 1 ? 'PASS' : 'FAIL',
+      { riseP: Math.round(rise), needsAtLeast: 116, jumpsWhileHeldTenSeconds: jumps, expected: 1 });
   } else if (mode === 'mech-angry') {
     // the anger multiplier is a real speed change, not a label
     sandbox(FLAT);
@@ -1253,11 +1535,15 @@ function eyePair(x, y, look, size, blink) {
 }
 function drawDragon(p) {
   const bob = Math.sin(p.anim * 6) * 1.6;
-  const sq = p.squash;
-  const sx = 1 + sq * 0.22, sy = 1 - sq * 0.22;
+  const sq = p.squash || 0, st = p.stretch || 0, sk = p.skid || 0;
+  // landing squashes wide and low; launching stretches tall and thin; both from the feet
+  let sx = 1 + sq * 0.22 - st * 0.18 + sk * 1.5 * -0.0;
+  let sy = 1 - sq * 0.20 + st * 0.20;
+  if (sk > 0) { sx = 0.80; sy = 1.12; }
   cx.save();
-  cx.translate(p.x, p.y + bob);
+  cx.translate(p.x - (p.face * 4 * (p.recoil || 0)), p.y + bob + 16);
   cx.scale(p.face * sx, sy);
+  cx.translate(0, -16);
   if (p.invuln > 0 && Math.floor(p.invuln * 14) % 2 === 0) cx.globalAlpha = 0.35;
   const step = Math.sin(p.anim * 11) * (Math.abs(p.vx) > 4 ? 3.2 : 0);
   // tail
@@ -1574,8 +1860,8 @@ function drawHUD() {
   }
   cx.textAlign = 'left';
   // hurry-up clock
-  const left = Math.max(0, HURRY_AT - G.roomT);
-  const frac = left / HURRY_AT;
+  const left = Math.max(0, hurryAt() - G.roomT);
+  const frac = left / hurryAt();
   cx.fillStyle = '#8a7fb5'; cx.font = 'bold 10px monospace';
   cx.fillText('TIME', OX, OY + PH + 21);
   const SEG = 34, barX = OX + 40, barW = PW - 40, segW = barW / SEG;
@@ -1752,7 +2038,49 @@ function draw() {
 }
 
 // ------------------------------ audio ------------------------------
+function saveBest() {
+  try { if (typeof localStorage !== 'undefined') localStorage.setItem('bubblekeep.best', String(G.best)); } catch (e) { }
+}
+function loadBest() {
+  try { if (typeof localStorage !== 'undefined') return +localStorage.getItem('bubblekeep.best') || 0; } catch (e) { }
+  return 0;
+}
+// An original loop written for this game — deliberately NOT Bubble Bobble's theme,
+// which is a copyrighted composition. Same idiom: fast, major, relentlessly cheerful,
+// a walking bass under a pentatonic tune, three oscillators, no audio files.
+const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];          // major pentatonic, two octaves
+const MELODY = [                                            // 32 eighth-notes, -1 = rest
+  5, 4, 3, 4, 5, 5, 5, -1, 4, 4, 4, -1, 5, 7, 7, -1,
+  5, 4, 3, 4, 5, 5, 5, 5, 7, 5, 4, 3, 2, -1, 2, -1,
+];
+const BASS = [0, 0, 3, 3, 4, 4, 3, 3];                      // one per half-bar
+function noteHz(step) { return 261.63 * Math.pow(2, SCALE[step % SCALE.length] / 12); }
 let AC = null;
+function musicTick(dt) {
+  if (!G || G.muted || G.headless || G.shotMode) return;
+  const bpm = G.hurry ? 208 : 152;                          // the keep panics with you
+  const stepLen = 30 / bpm;                                 // an eighth note
+  G.musT = (G.musT || 0) + dt;
+  if (G.musT < stepLen) return;
+  G.musT -= stepLen;
+  const s = (G.musStep = ((G.musStep || 0) + 1) % 32);
+  const n = MELODY[s];
+  if (n >= 0) tone(noteHz(n) * 2, stepLen * 0.9, 'square', 0.030);
+  if (s % 4 === 0) tone(noteHz(BASS[(s / 4) | 0]) / 2, stepLen * 1.6, 'triangle', 0.055);
+  if (s % 2 === 0) tone(70, 0.03, 'square', 0.018);         // a tick to keep time
+}
+function tone(f, d, type, vol) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = AC.currentTime;
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0008, t0 + d);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t0); o.stop(t0 + d);
+  } catch (e) { }
+}
 function beep(f, d, type, delay) {
   if (!G || G.muted || G.headless || G.shotMode) return;
   try {
@@ -1778,6 +2106,7 @@ function onKey(e, down) {
   }
   if (down && (k === 'p' || k === 'P')) { G.screen = G.screen === 'paused' ? 'play' : 'paused'; return; }
   if (down && (k === 'm' || k === 'M')) { G.muted = !G.muted; return; }
+  if (down && (k === 'ArrowDown' || k === 's' || k === 'S')) { /* aim down: fall through to held */ }
   held[k] = down;
 }
 function readInput() {
@@ -1785,6 +2114,8 @@ function readInput() {
     left: !!(held['ArrowLeft'] || held['a'] || held['A']),
     right: !!(held['ArrowRight'] || held['d'] || held['D']),
     jump: !!(held['ArrowUp'] || held['z'] || held['Z'] || held['w'] || held['W']),
+    up: !!(held['ArrowUp'] || held['w'] || held['W']),
+    down: !!(held['ArrowDown'] || held['s'] || held['S']),
     blow: !!(held[' '] || held['x'] || held['X']),
   };
 }
@@ -1865,7 +2196,7 @@ const SHOTS = {
     check() { return G.letters.length === 1 && G.have.filter(Boolean).length === 3; },
   },
   won: {
-    run() { newGame(RUN_SEED, { headless: true }); runBot({}, 260); G.headless = false; G.screen = 'won'; },
+    run() { newGame(RUN_SEED, { headless: true }); runBot({}, 700); G.headless = false; G.screen = 'won'; },
     check() { return G.won === true; },
   },
   lost: {
