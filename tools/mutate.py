@@ -22,7 +22,8 @@ CHROME = os.environ.get("CHROME", "chromium")
 MECH_MODES = [
     "mech-bubble", "mech-trap", "mech-pop", "mech-escape", "mech-chain",
     "mech-ride", "mech-wrap", "mech-hurry", "mech-death", "mech-extend",
-    "mech-fruit", "mech-clear", "mech-platform", "mech-monsters", "mech-boulder",
+    "mech-fruit", "mech-clear", "mech-clear-strict", "mech-blowrate",
+    "mech-ghost-kills", "mech-platform", "mech-monsters", "mech-boulder",
     "mech-ledge", "mech-selfbubble", "mech-angry",
 ]
 MACRO_MODES = ["solution", "null", "ablate-bubble", "ablate-pop", "ablate-jump"]
@@ -98,15 +99,48 @@ MUTANTS = [
      "    if (false) continue;"),
     ("death-costs-no-life", "dying is free",
      "  G.deaths++; G.lives--;", "  G.deaths++;"),
+    # --- the fidelity critic's own list: rule-breaks it predicted would survive ---
+    ("room-clears-with-a-monster-alive", "a room completes while a monster still walks it",
+     "  if (G.enemies.length === 0 && !G.over) {", "  if (G.enemies.length <= 1 && !G.over) {"),
+    ("breath-is-free", "a bubble every frame — the only resource constraint deleted",
+     "  p.blowT = 0.24;", "  p.blowT = 0.01;"),
+    ("bubble-travel-shortened", "bubbles stop short of where the shot is aimed",
+     "const BUB_SPEED = 260, BUB_TRAVEL = 0.42,", "const BUB_SPEED = 260, BUB_TRAVEL = 0.33,"),
+    ("ghost-cannot-kill", "the hurry-up ghost becomes decoration",
+     "    if (G.ghost && Math.abs(G.ghost.x - p.x) < 22 && Math.abs(G.ghost.y - p.y) < 24) { killPlayer(); return; }",
+     "    if (false) { killPlayer(); return; }"),
+    ("ghost-crawls", "the ghost hunts at a crawl",
+     "    G.ghost.vx = Math.max(-118, Math.min(118, G.ghost.vx));",
+     "    G.ghost.vx = Math.max(-8, Math.min(8, G.ghost.vx));"),
+    ("chain-window-forever", "one endless chain: every kill after the first pays 8000",
+     "const HURRY_AT = 42, CHAIN_WINDOW = 0.9, ESCAPE_ANGRY = 1.45;",
+     "const HURRY_AT = 42, CHAIN_WINDOW = 600, ESCAPE_ANGRY = 1.45;"),
+    ("chain-is-flat", "every rung of the chain pays the same",
+     "const CHAIN = [1000, 2000, 4000, 8000];", "const CHAIN = [3333, 3333, 3333, 3333];"),
+    ("fruit-ignores-the-chain", "a four-chain drops the same cherry as a single",
+     "    dropFruit(b.x, b.y, step);", "    dropFruit(b.x, b.y, 0);"),
+    ("clock-halved", "the room clock runs out in twenty seconds",
+     "const HURRY_AT = 42, CHAIN_WINDOW = 0.9,", "const HURRY_AT = 20, CHAIN_WINDOW = 0.9,"),
+    ("extend-letters-overpay", "a letter is worth a hundred times its due",
+     "      G.score += 500;", "      G.score += 50000;"),
+    ("anger-overtuned", "escapees come back faster than the rule says",
+     "ESCAPE_ANGRY = 1.45;", "ESCAPE_ANGRY = 1.55;"),
+    ("bubbles-barely-rise", "bubbles climb too slowly to be caught up with",
+     "BUB_RISE = 46,", "BUB_RISE = 32,"),
+    ("melon-is-a-cherry", "the fruit table flattens",
+     "  { name: 'melon', value: 700, col: '#5ee36a' },", "  { name: 'melon', value: 100, col: '#5ee36a' },"),
+    ("flyers-phase-through-stone", "the aviary ignores the walls",
+     "    if (!solidPx(nx, e.y) && !solidPx(nx, e.y - e.h / 2 + 4) && !solidPx(nx, e.y + e.h / 2 - 4)) e.x = nx;\n    else e.vx = -e.vx;",
+     "    e.x = nx;"),
 ]
 
-def run_mode(path, mode, budget=180000):
+def run_mode(path, mode, budget=600000):
     try:
         out = subprocess.run(
             [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
              "--virtual-time-budget=%d" % budget, "--dump-dom",
              "file://%s/index.html?verify=%s" % (path, mode)],
-            capture_output=True, text=True, timeout=240).stdout
+            capture_output=True, text=True, timeout=600).stdout
     except subprocess.TimeoutExpired:
         return {"outcome": "TIMEOUT"}
     m = re.search(r"VERIFY:(\{[^<]*\})", out)

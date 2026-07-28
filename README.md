@@ -44,15 +44,17 @@ deterministic `?shot=` captures, four harsh sub-agent critics (three
 visual lenses plus a Bubble-Bobble-fidelity judge), honest scores. The
 proof harness's next species: **rescues as theorems.**
 
-`tools/playtest.sh` proves 24 claims:
+`tools/playtest.sh` proves 27 claims — and it is a **gate**, not a printout: it exits non-zero if a single one fails.
 
 - **the bot must empty the keep**: all six rooms cleared, 19 monsters
   bubbled and burst, two dragons lost along the way — and it plays
   through the *same input object the keyboard fills*, pressing left,
   right, jump and blow, never teleporting or scripting a kill;
-- **and not only on one run of the dice**: across eight seeds the bot
-  clears the keep at least six times, while the do-nothing dragon
-  clears it zero times out of eight;
+- **and the honest strength is the sweep, not that one run**: across
+  eight seeds the bot clears the keep **6 times out of 8**, while the
+  do-nothing dragon clears it 0 of 8. The report prints the two seeds
+  it loses. The demo seed — the one every screenshot uses — is one of
+  the six it wins, and says so in its own output;
 - **the ablations form a gradient, not a cliff** — which is the whole
   point of having them:
 
@@ -64,7 +66,7 @@ proof harness's next species: **rescues as theorems.**
   | never blows a bubble | 0 |
   | does nothing at all | 0 (dies) |
 
-- **18 mechanism proofs** isolate every rule of the cave: a bubble
+- **21 mechanism proofs** isolate every rule of the cave: a bubble
   coasts ~133px and then climbs; it catches a monster and carries it;
   bursting one pays 1000 and drops fruit; a bubble left too long bursts
   at 9.3 seconds and returns its captive **angry and 1.45× faster** (a
@@ -82,30 +84,30 @@ proof harness's next species: **rescues as theorems.**
   not swallowed by the snout that blew it.
 
 **And the proofs must prove they can fail.** `tools/mutate.sh` breaks
-one rule of the cave at a time — 28 mutants: bubbles that catch
-nothing, captives that never escape, anger that is only cosmetic, a
-ghost that does not hunt, walls you can walk through, a hurler that
-never throws, monsters that never leave their shelf — and requires a
-**targeted mechanism proof** to turn red for each. A mutant killed only
-by the 400-second bot run does not count; a long game diverges under
-almost any change.
+one rule of the cave at a time — **42 mutants**, including all fifteen
+the fidelity critic predicted would survive — and requires a **targeted
+mechanism proof** to turn red for each. A mutant killed only by the
+400-second bot run does not count; a long game diverges under almost
+any change.
 
 ```
-28/28 killed by a targeted mechanism proof
- 0/28 killed only by a macro run (chaos)
- 0/28 survived everything
+42/42 killed by a targeted mechanism proof
+ 0/42 killed only by a macro run (chaos)
+ 0/42 survived everything
 ```
 
 ## Scores
 
 | round | composition | game-feel | HUD | visual mean | BB fidelity |
 |---|---|---|---|---|---|
-| 1 (final) | 5.2 | 5.6 | 4.3 | **5.0** | TBD |
+| 1 (final) | 5.2 | 5.6 | 4.3 | **5.0** | 6.5 |
 
 Composition: *"clean, tidy, correctly-assembled — and completely
 inert."* Game-feel: *"a well-organised game that does not yet have a
 body."* HUD: *"a handsome, well-drawn cave that never once explains its
-own central trick."*
+own central trick."* Fidelity: the spine is *"a genuine reading of the
+game, not a screenshot of one"* — but the harness was **"theater built
+out of real instruments."***
 
 A post-panel batch answered them. The HUD critic's sharpest catch was
 that **the captured monster was invisible** — the bubble's own glass
@@ -135,7 +137,35 @@ of piling into an illegible heap. Platforms gained cast shadows,
 rounded ends with squared interior joins so a run reads as one slab,
 and per-tile studs and cracks.
 
-All 24 theorems and the mutation gate re-verified after every change.
+**The fidelity audit was the harshest this series has produced, and it
+was right.** It read the suite while the file was being edited live,
+found the headline theorem red on disk while green in my notes, and
+then proved the deeper problem: **three one-line rule-breaks made the
+suite go *greener*.** Chief among them — letting a room complete with a
+live monster still walking in it took the suite from 20/21 to 21/21,
+because `mech-clear` emptied the enemy list before ticking and so never
+presented the boundary it existed to test. It also caught five
+assertions that only proved a constant equalled itself, ablations whose
+pass condition (`!won`) was far weaker than the sentence they printed,
+flyers that swam through solid stone, dead code in the monster table,
+and a `playtest.sh` that exited 0 no matter what.
+
+All of it is fixed. The suite is a gate that fails loudly. Every
+constant-referencing assertion now checks a literal band. The
+ablations assert the claim they print. `mech-clear-strict` presents the
+boundary, `mech-blowrate` guards the game's only resource,
+`mech-ghost-kills` makes the ghost a threat rather than decoration, and
+the mutation gate grew from 28 mutants to 42 — every one of the
+critic's fifteen predictions included, every one of them now dead.
+
+Two design changes came out of the audit rather than the art: flyers
+collide with stone, and boulders shatter where they land instead of
+ricocheting around the room forever. Both made the game harder and
+**the bot then failed the theorem** — so the bot and the rooms were
+rebalanced rather than the clock being moved, which is the trap the
+critic caught me in once already.
+
+All 27 theorems and the 42-mutant gate re-verified after every change.
 The scores above are the panel's, judged before those fixes.
 
 ## Honest assessment
@@ -145,8 +175,14 @@ The scores above are the panel's, judged before those fixes.
   water, fire or lightning bubbles; no treasure; no potions; no
   Skel-Monsta; no secret rooms; no true ending; no second player —
   the title says *two little dragons* and ships one.
-- **28 mutants is not all mutants.** The gate proves the suite catches
-  the twenty-eight rule-breaks it was pointed at.
+- **The bot clears the keep on 6 of 8 seeds, not 8 of 8.** Two seeds
+  beat it and the sweep prints them. The screenshots use one of the six
+  it wins, and the report says so rather than implying a clean sheet.
+- **42 mutants is not all mutants.** The gate proves the suite catches
+  the forty-two rule-breaks it was pointed at.
+- **"Two little dragons" is the title's promise and the game ships
+  one.** There is no second player. The strapline is aspirational and
+  this line is the correction.
 - **Nothing exercises the input layer.** DAS-style repeat, the exact
   jump-buffer window and the mute toggle are proven by no test.
 - Staged evidence shots are separate deterministic runs; any capture
@@ -183,7 +219,21 @@ The scores above are the panel's, judged before those fixes.
    now holds the button while rising, like a player does. The physics
    change was right; the bot had been exploiting a jump that could not
    be shortened.
-6. **The mutation gate caught what four green suites could not.** Its
+6. **The fidelity critic read the file while I was editing it, and
+   that turned out to be the most useful accident of the series.** It
+   caught a build where the headline theorem was dead on disk while my
+   notes said green, because I had changed the jump physics and not
+   re-run the suite. It also caught me raising the time budget from 330
+   to 400 seconds in the same window the bot got worse — moving the
+   goalposts, recorded in the diff. `tools/playtest.sh` is now a gate
+   that exits non-zero, so that particular self-deception is no longer
+   available to me.
+7. **A suite that goes greener when you break the rules is not
+   measuring the rules.** Three one-line mutants took it from 20/21 to
+   21/21 — most damningly, completing a room with a monster still alive
+   in it. `mech-clear` set `G.enemies = []` before ticking, so the only
+   value it never presented was the boundary it was named after.
+8. **The mutation gate caught what four green suites could not.** Its
    first honest run left five rules unguarded: the hurry-up ghost could
    stop hunting horizontally and `mech-hurry` still passed (it summed
    both axes, and vertical homing alone carried it); walls could stop
