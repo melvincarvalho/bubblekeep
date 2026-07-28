@@ -27,7 +27,7 @@ MECH_MODES = [
     "mech-platform", "mech-monsters", "mech-boulder",
     "mech-ledge", "mech-selfbubble", "mech-angry",
 ]
-MACRO_MODES = ["solution", "null", "ablate-bubble", "ablate-pop", "ablate-aim"]
+MACRO_MODES = ["calm", "null", "ablate-bubble", "ablate-pop", "ablate-aim"]
 MODES = MECH_MODES + MACRO_MODES
 
 # (name, description, find, replace) — each breaks exactly one rule of the cave
@@ -124,7 +124,7 @@ MUTANTS = [
     ("extend-letters-overpay", "a letter is worth a hundred times its due",
      "      G.score += 500;", "      G.score += 50000;"),
     ("anger-overtuned", "escapees come back faster than the rule says",
-     "ESCAPE_ANGRY = 1.45;", "ESCAPE_ANGRY = 1.55;"),
+     "ESCAPE_ANGRY = 1.75,", "ESCAPE_ANGRY = 1.95,"),
     ("bubbles-barely-rise", "bubbles climb too slowly to be caught up with",
      "BUB_RISE = 46,", "BUB_RISE = 32,"),
     ("melon-is-a-cherry", "the fruit table flattens",

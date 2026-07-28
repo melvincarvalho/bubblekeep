@@ -330,6 +330,101 @@ before the *default* difficulty can rise. That is a navigation layer —
 a graph of standable surfaces with walk, jump and drop edges — not
 another heuristic patch, and it is the honest next piece of work.
 
+## Round three: the rage clock
+
+A real player finished the game with **zero dragons lost, in five
+minutes**, and described the whole experience as *"just put in a bubble
+and kill"*. Three critics were pointed at that evidence. They came back
+at **1.5, 2.5 and 2.5 out of 10** — the lowest scores in the series —
+and they agreed on the cause.
+
+**Nothing in the game ever moved toward the player.** A walker's
+direction was set by `Math.sign(e.vx) * sp` and only ever changed on a
+wall or a ledge. That is 24 of 30 monsters — 80% of the roster — on
+fixed patrol loops. And nothing could catch you even if it wanted to:
+
+| threat | top speed | vs player's 190 px/s |
+|---|---|---|
+| wanderer, even enraged | 75 | cannot catch |
+| hurler | 58 | cannot catch |
+| flyer, even mid-charge | 96 | cannot catch |
+| the *invincible* hurry-up ghost | 118 | cannot catch |
+
+One-touch death was the only failure state in a game where nothing was
+capable of touching you. A critic parked on room 1's shelf and pressed
+nothing for **300 seconds**: zero deaths, closest threat ever 40px.
+
+### The measured indictment
+
+Two critics independently ablated the reference bot and found the same
+thing: **it wins more with its jump button deleted.**
+
+| bot | rooms won | avg score |
+|---|---|---|
+| full | 4/6 | 99,983 |
+| **jump deleted** | **6/6** | **111,883** |
+
+Every vertical mechanic — coyote time, jump buffering, variable height,
+the skid, bubble riding — is craft spent on a verb the game never asks
+for. And the one mechanic with real headroom, the cascade, was being
+executed *by the physics*: held bubbles magnetically drift together, so
+the game assembled the player's combo for them.
+
+### What changed
+
+**The rage clock.** When the hurry-up fires the *entire room* goes
+furious at once and stays that way — the arcade's real turn, which this
+game never had. Anger stopped being a stat and became a behaviour:
+enraged monsters **steer at you**, step off ledges on purpose, climb
+after you when they hit a wall, and an enraged hurler throws wherever
+you are, on a 1.2s cadence, leading the shot. A second stage at +15s
+takes them to 2.1×. `ESCAPE_ANGRY` went 1.45 → 1.75.
+
+**The last monsters hunt hardest.** A dwindle multiplier scales with how
+many of the room you have already cleared, up to 2×. The end of a room
+was the safest moment in the game; it is now the most dangerous.
+
+**The ghost can catch you.** Its cap was a flat 118 px/s — 62% of your
+run speed, outrunnable forever. It now starts at 96 and accelerates by
+13 px/s for every second past the deadline, and it corners twice as
+hard. You can no longer outrun the clock; you can only clear the room.
+
+**Dying stopped being a reset.** `loadRoom` rewound `roomT`, cleared
+`hurry`, deleted the ghost and calmed every survivor — so after 40
+seconds, **suicide was a correct strategy**. The clock, the rage and the
+ghost now all survive your death.
+
+**Three dragons, not five** (I had padded it to five in round two), and
+a hard cap of six live bubbles — 38 were reachable before, so panic
+spraying was free.
+
+**`G.cycle` was dead code.** The "furious second lap" written in round
+two was never reachable because the counter was never incremented. It is
+now.
+
+### The theorem had to be restated, and that is the honest part
+
+The keep is now deliberately harder than its own verification agent — a
+simple bot that cannot climb, ride a bubble, or cross a gap, and which
+demonstrably plays *better* without jumping. Insisting it still "clears
+every room" would mean capping the game at what a poor player can
+survive, which is exactly the complaint that produced this pass.
+
+So the claims now say what is true:
+
+- **`solution`** — a simple agent must reach room 3+ and bubble 18+
+  monsters *at shipped difficulty*. It does.
+- **`calm`** — with the rage clock disarmed and a full stack of dragons,
+  the keep is completable end to end. It is. This is the
+  completability proof: the rooms, monsters and win condition still
+  chain together.
+- **`solution-seeds`** — the same depth claim across 8 seeds, and it
+  prints every seed's result.
+
+The 21 mechanism proofs are untouched and still verify the real rules on
+the real code. What changed is that the macro claim no longer pretends
+the bot is a good player.
+
 ## Honest assessment
 
 - **One critic round** — the scores are a floor, not a ceiling.

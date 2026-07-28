@@ -23,7 +23,7 @@ run() {
     *) FAILED=$((FAILED + 1)) ;;
   esac
 }
-for m in solution solution-seeds null ablate-bubble ablate-pop ablate-aim \
+for m in solution calm solution-seeds null ablate-bubble ablate-pop ablate-aim \
          mech-bubble mech-trap mech-pop mech-escape mech-chain mech-ride \
          mech-wrap mech-hurry mech-death mech-extend mech-fruit mech-clear \
          mech-clear-strict mech-blowrate mech-ghost-kills mech-cascade mech-aim mech-jump \
