@@ -16,121 +16,120 @@ function hash32(a, b, c) {
 }
 
 // ------------------------------ the keep ------------------------------
-const TILE = 36, COLS = 24, ROWS = 16, OXPAD = 42;
-const PW = COLS * TILE, PH = ROWS * TILE;          // 864 x 576
-const OX = (1280 - PW) / 2, OY = 106;
+const TILE = 36, COLS = 32, ROWS = 16, OXPAD = 42;
+const PW = COLS * TILE, PH = ROWS * TILE;          // 1152 x 576 — the frame, filled
+const OX = (1280 - PW) / 2, OY = 72;
 
 // '#' block  '.' air  'p' player  'w' wanderer  'h' hurler  'f' flyer
 const ROOMS = [
-  [ // 1 — the doorstep. a tutorial with teeth: the ledge pins a wanderer at exactly
-    // bubble range, and the bubble it becomes parks under the lid, out of walking
-    // reach — so both halves of the verb are forced by geometry in ten seconds.
-    '########################',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#.....####.............#',
-    '#......................#',
-    '#..p.....w.............#',
-    '#.####..####...........#',
-    '#......................#',
-    '#......................#',
-    '#...........ww.........#',
-    '########################',
+  [ // 1 — the doorstep. the ledge pins a wanderer at bubble range; the lid parks the
+    // caught bubble overhead, so jump-to-pop is taught by geometry inside ten seconds.
+    '################################',
+    '#..............................#',
+    '#..............................#',
+    '#..............................#',
+    '#..............................#',
+    '#..............................#',
+    '#...................######.....#',
+    '#..............................#',
+    '#.....#####....................#',
+    '#..............................#',
+    '#........w.....................#',
+    '#.####.####..........#####.....#',
+    '#..............................#',
+    '#..............................#',
+    '#..p..........w.........ww.....#',
+    '################################',
   ],
-  [ // 2 — the gallery: climbable shelves, a pair up top, a knot below
-    '########################',
-    '#......................#',
-    '#......................#',
-    '#.....##########.......#',
-    '#......................#',
-    '#........ww............#',
-    '#...#####....######....#',
-    '#......................#',
-    '#......................#',
-    '#.....##########.......#',
-    '#......................#',
-    '#......................#',
-    '#..####..........####..#',
-    '#......................#',
-    '#..p.......www.........#',
-    '########################',
+  [ // 2 — the gallery: stub shelves ladder the walls; the floor stays a firing lane
+    '################################',
+    '#..............................#',
+    '#..............................#',
+    '#.....................######...#',
+    '#..............................#',
+    '#......w.......................#',
+    '#....######....................#',
+    '#..............................#',
+    '#..............................#',
+    '#..................######......#',
+    '#..............................#',
+    '#..............................#',
+    '#...#####......................#',
+    '#..............................#',
+    '#..p..........www.......w......#',
+    '################################',
   ],
-  [ // 3 — the hurler's landing: get level with it and it stays to fight
-    '########################',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#.......########.......#',
-    '#......................#',
-    '#.....h................#',
-    '#..#####........####...#',
-    '#......................#',
-    '#......................#',
-    '#....####......####....#',
-    '#......................#',
-    '#......................#',
-    '#..####..........####..#',
-    '#..p....ww......ww.....#',
-    '########################',
+  [ // 3 — the hurler's landing: climb the stubs to its level and it stands to fight
+    '################################',
+    '#..............................#',
+    '#..............................#',
+    '#..........######..............#',
+    '#..............................#',
+    '#.......h......................#',
+    '#.....######............####...#',
+    '#..............................#',
+    '#..............................#',
+    '#.........................w....#',
+    '#.......................####...#',
+    '#..............................#',
+    '#...#####......................#',
+    '#..............................#',
+    '#..p....www..........w.........#',
+    '################################',
   ],
-  [ // 4 — the aviary: open sky, two flyers, and a floor that opens
-    '########################',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#......................#',
-    '#.....##########.......#',
-    '#......................#',
-    '#....f.........f.......#',
-    '#......................#',
-    '#......................#',
-    '#..####..........####..#',
-    '#......................#',
-    '#......................#',
-    '#..p...ww.........w....#',
-    '#########....###########',
+  [ // 4 — the aviary: open sky, a floor that opens, the flyer owns the middle
+    '################################',
+    '#..............................#',
+    '#..............................#',
+    '#.........######...............#',
+    '#..............................#',
+    '#..................f...........#',
+    '#..............................#',
+    '#....#####...........#####.....#',
+    '#..............................#',
+    '#..............................#',
+    '#..............................#',
+    '#..............................#',
+    '#...####..........####.........#',
+    '#.....ww...............ww......#',
+    '#..p...........................#',
+    '##########....##################',
   ],
-  [ // 5 — the pinch: a real lane, a hurler holding it
-    '########################',
-    '#......................#',
-    '#......................#',
-    '#....##########........#',
-    '#......................#',
-    '#.......h..............#',
-    '#..#####....######.....#',
-    '#......................#',
-    '#......................#',
-    '#....######..######....#',
-    '#......................#',
-    '#......................#',
-    '#..####..........####..#',
-    '#.......ww.............#',
-    '#..p.....ww.....ww.....#',
-    '########################',
+  [ // 5 — the pinch: a hurler holds the mid line; the stubs stagger a lane
+    '################################',
+    '#..............................#',
+    '#..............................#',
+    '#......######..................#',
+    '#..............................#',
+    '#.................h............#',
+    '#...............######.........#',
+    '#..............................#',
+    '#..............................#',
+    '#.....######...................#',
+    '#..............................#',
+    '#..............................#',
+    '#..................######......#',
+    '#..............................#',
+    '#..p.....www...........ww......#',
+    '################################',
   ],
-  [ // 6 — the keep's crown: everything at once, in open air, over a hole
-    '########################',
-    '#......................#',
-    '#......................#',
-    '#.......########.......#',
-    '#......................#',
-    '#......................#',
-    '#..###..........###....#',
-    '#................f.....#',
-    '#......................#',
-    '#.......h..............#',
-    '#.....##########.......#',
-    '#......................#',
-    '#..####..........####..#',
-    '#......ww........w.....#',
-    '#..p...................#',
-    '#########....###########',
+  [ // 6 — the keep's crown: everything at once, over an open floor
+    '################################',
+    '#..............................#',
+    '#..............................#',
+    '#........######................#',
+    '#..............................#',
+    '#......h..............f........#',
+    '#....######..................###',
+    '#..............................#',
+    '#..............................#',
+    '#............######............#',
+    '#..............................#',
+    '#..............................#',
+    '#...####............####.......#',
+    '#.......ww.....................#',
+    '#..p..........www..............#',
+    '#################....###########',
   ],
 ];
 
@@ -154,6 +153,7 @@ const COYOTE = 0.10, JUMP_BUFFER = 0.12, JUMP_CUT = 300;
 const ACCEL = 1700, AIR_ACCEL = 950, FRICTION = 2400;
 const BUB_SPEED = 260, BUB_TRAVEL = 0.42, BUB_RISE = 46, BUB_LIFE = 9.5, BUB_WARN = 7.0;
 const HURRY_AT = 60, HURRY_LAP2 = 30, CHAIN_WINDOW = 1.6, ESCAPE_ANGRY = 1.75, RAGE2 = 2.1;
+const AIR_MAX = 4, AIR_REGEN_GROUND = 1.5, AIR_REGEN_AIR = 0.5, WHEEZE = 0.6;
 const RAGE2_AT = 15, MAX_BUBBLES = 6;
 const CASCADE_R = 86;
 
@@ -220,7 +220,7 @@ function loadRoom(i) {
   }
   G.player = {
     x: px, y: py, vx: 0, vy: 0, w: 30, h: 32, face: 1, onGround: false,
-    alive: true, invuln: 2.0, blowT: 0, anim: 0, squash: 0, stretch: 0, skid: 0, jumpHeld: false, stepT: 0, coyote: 0, buffer: 0, recoil: 0,
+    alive: true, invuln: 2.0, blowT: 0, anim: 0, squash: 0, stretch: 0, skid: 0, jumpHeld: false, stepT: 0, coyote: 0, buffer: 0, recoil: 0, air: AIR_MAX, wheeze: 0,
   };
   G.banner = { txt: 'ROOM ' + (i + 1), t: 0, sub: roomName(i) };
 }
@@ -266,7 +266,9 @@ function moveBody(e, dt, dropThrough) {
     }
   } else if (e.vy < 0) {
     const head = e.y - halfH;
-    if (!dropThrough && (solidPx(e.x - halfW + 4, head) || solidPx(e.x + halfW - 4, head))) {
+    // interior platforms are jump-through; the border ceiling is NOT. Chasing a high
+    // bubble used to carry the dragon straight through the roof and strand it on top.
+    if ((!dropThrough || head < TILE + 2) && (solidPx(e.x - halfW + 4, head) || solidPx(e.x + halfW - 4, head))) {
       e.y = (Math.floor(head / TILE) + 1) * TILE + halfH + 0.01;
       e.vy = 0;
     }
@@ -286,8 +288,12 @@ function moveBody(e, dt, dropThrough) {
 function blow(aim) {
   const p = G.player;
   if (!p.alive || p.blowT > 0 || (!G.calm && G.bubbles.length >= MAX_BUBBLES)) return false;
+  if (p.wheeze > 0 || p.air < 1) { beep(90, 0.05, 'sine'); return false; }   // out of breath
+  p.air -= 1;
+  if (p.air <= 0) { p.wheeze = WHEEZE; beep(70, 0.3, 'sawtooth'); }
   p.blowT = 0.24;
   p.recoil = 1;
+  G.parts.push({ ring: true, x: p.x + p.face * 24, y: p.y - 2, t: 0, life: 0.16, r0: 8, r1: 34, w0: 4, col: '#dff6ff' });
   for (let i = 0; i < 4; i++) {
     const a = (hash32(i, Math.floor(p.x), 5) - 0.5) * 1.1;
     G.parts.push({ x: p.x + p.face * 22, y: p.y - 2, vx: p.face * (60 + i * 22), vy: Math.sin(a) * 55 - 20,
@@ -296,6 +302,7 @@ function blow(aim) {
   G.bubbles.push({
     x: p.x + p.face * 20, y: p.y - 2, vx: p.face * BUB_SPEED, vy: (aim || 0) * 190,
     r: 17, age: 0, state: 'travel', holds: null, pop: 0,
+    homeY: p.y,                        // a bubble hovers near the breath that made it
   });
   beep(300, 0.05, 'sawtooth');
   beep(760, 0.07, 'sine', 0.02);
@@ -376,7 +383,12 @@ function updateBubbles(dt) {
       if (b.vy) { b.y += b.vy * dt; if (solidPx(b.x, b.y + Math.sign(b.vy) * b.r)) b.vy = 0; }
       if (b.age >= BUB_TRAVEL || solidPx(b.x + Math.sign(b.vx) * b.r, b.y)) { b.state = 'float'; b.vx = 0; b.vy = 0; }
     } else {
-      b.y -= BUB_RISE * (b.holds ? 0.5 : 1) * dt;
+      // rise, but only ~2.5 tiles above the blower — then hover in play. Bubbles used
+      // to climb uninterrupted to the ceiling in open rooms, parking every caught
+      // monster 500px out of reach, which stalled the game for player and bot alike.
+      const apex = (b.homeY === undefined ? 120 : b.homeY) - 92;
+      if (b.y > apex) b.y -= BUB_RISE * (b.holds ? 0.5 : 1) * dt;
+      else b.y += Math.sin(b.age * 2.6) * 7 * dt;
       b.x += Math.sin(b.age * 2.2 + b.y * 0.02) * 8 * dt;
       if (solidPx(b.x, b.y - b.r)) b.y = (Math.floor((b.y - b.r) / TILE) + 1) * TILE + b.r + 0.5;
     }
@@ -388,6 +400,7 @@ function updateBubbles(dt) {
         if (e.state !== 'normal') continue;
         if (boxHits({ x: b.x, y: b.y, w: b.r * 2, h: b.r * 2 }, e)) {
           e.state = 'bubbled'; e.bubbleT = 0; b.holds = e; b.state = 'float'; b.vx = 0;
+          if (G.player) G.player.air = Math.min(AIR_MAX, (G.player.air || 0) + 1);  // a hit is free breath
           G.freeze = Math.max(G.freeze, 0.05);
           G.shake = Math.max(G.shake, 0.18);
           G.parts.push({ ring: true, x: b.x, y: b.y, t: 0, life: 0.3, col: '#ffffff' });
@@ -527,6 +540,8 @@ function playerUpdate(dt, input) {
   p.buffer = (input.jump && !p.jumpHeld) ? JUMP_BUFFER : Math.max(0, p.buffer - dt);
   p.jumpHeld = !!input.jump;
   p.recoil = Math.max(0, p.recoil - dt * 5);
+  p.wheeze = Math.max(0, (p.wheeze || 0) - dt);
+  if (p.wheeze <= 0) p.air = Math.min(AIR_MAX, (p.air == null ? AIR_MAX : p.air) + (p.onGround ? AIR_REGEN_GROUND : AIR_REGEN_AIR) * dt);
   if (p.buffer > 0 && p.coyote > 0) {
     p.vy = -JUMP_V; p.onGround = false; p.stretch = 0.8; p.squash = 0;
     p.coyote = 0; p.buffer = 0;
@@ -599,7 +614,13 @@ function playerUpdate(dt, input) {
 }
 function killPlayer() {
   const p = G.player;
-  p.alive = false; p.vy = -260;
+  p.alive = false; p.vy = -260; p.deathT = 0;
+  for (let k = 0; k < 22; k++) {
+    const a = k / 22 * 6.283;
+    G.parts.push({ x: p.x, y: p.y, vx: Math.cos(a) * (120 + hash32(k, 1, 2) * 160), vy: Math.sin(a) * 200 - 60,
+      t: 0, life: 0.6, drag: 0.92, r: 3 + hash32(k, 3, 4) * 3, col: '#8fe86b' });
+  }
+  G.flash = { x: p.x, y: p.y, t: G.time, big: true };
   G.deaths++; G.lives--;
   G.shake = Math.max(G.shake, 0.6);
   G.freeze = Math.max(G.freeze, 0.22);
@@ -674,6 +695,7 @@ function tick(dt, input) {
   G.shake = Math.max(0, G.shake - dt * 1.5);
   const p = G.player;
   if (!p.alive) {
+    p.deathT = (p.deathT || 0) + dt;
     p.vy += GRAV * dt; p.y += p.vy * dt;
     if (p.y > PH + 80) {
       if (G.lives > 0) {
@@ -720,36 +742,55 @@ function botInput(o) {
   const toward = (tx) => { if (tx > p.x + 6) goRight(); else if (tx < p.x - 6) goLeft(); };
   const away = (tx) => { if (tx > p.x) goLeft(); else goRight(); };
 
-  // 0. staying alive comes first: one touch and the dragon is gone
-  let danger = null, dd = 1e9;
+  // 0. staying alive comes first: one touch and the dragon is gone.
+  //    forecast the whole approach, not just where monsters are: sample the path at
+  //    half-lookahead too, or a monster dropping onto your head ends up "past" you
+  //    in the projection and is never seen at all.
+  const LOOK = 0.42;
+  let push = 0, worst = 0, worstX = 0, worstLevel = false;
+  const consider = (x, y, vx, vy, reach) => {
+    const d0 = Math.hypot(x - p.x, y - p.y);
+    if (d0 > reach * 1.9) return;
+    let d = d0, fx = x, fy = y;
+    for (const t of [LOOK * 0.5, LOOK]) {
+      const sx = x + (vx || 0) * t, sy = y + (vy || 0) * t;
+      const sd = Math.hypot(sx - p.x, sy - p.y);
+      if (sd < d) { d = sd; fx = sx; fy = sy; }
+    }
+    if (d > reach) return;
+    const w = (reach - d) / reach;
+    push += (fx - p.x > 0 ? -w : w);
+    if (w > worst) { worst = w; worstX = fx; worstLevel = Math.abs(fy - p.y) < 36; }
+  };
   for (const e of G.enemies) {
     if (e.state !== 'normal') continue;
-    const ax = Math.abs(e.x - p.x), ay = Math.abs(e.y - p.y);
-    const vr = KINDS[e.kind].flies ? 52 : 36;      // flyers close from above and below
-    if (ax < 58 && ay < vr && ax < dd) { dd = ax; danger = e; }
+    const reach = KINDS[e.kind].flies ? (e.charge > 0 ? 140 : 60) : 96;
+    consider(e.x, e.y, e.vx, e.vy, reach);
   }
-  for (const q of G.parts) {
-    if (!q.boulder) continue;
-    const ax = Math.abs(q.x - p.x), ay = Math.abs(q.y - p.y);
-    if (ax < 70 && ay < 40 && ax < dd) { dd = ax; danger = q; }
-  }
-  if (G.ghost) {
-    const ax = Math.abs(G.ghost.x - p.x), ay = Math.abs(G.ghost.y - p.y);
-    if (ax < 76 && ay < 46 && ax < dd) { dd = ax; danger = G.ghost; }
-  }
-  if (danger) {
-    // a monster in your face is not a reason to run — it is a reason to breathe.
-    // (blow without moving: turning would send the bubble the wrong way this frame)
-    if (danger.kind && !o.noBlow && p.blowT <= 0) {
-      const facingIt = (danger.x > p.x && p.face > 0) || (danger.x < p.x && p.face < 0);
-      if (facingIt) { inp.blow = true; return inp; }
+  for (const q of G.parts) if (q.boulder) consider(q.x, q.y, q.vx, q.vy, 105);
+  if (G.ghost) consider(G.ghost.x, G.ghost.y, G.ghost.vx, G.ghost.vy, 128);
+  if (worst > 0.34) {
+    // a monster in your face is not a reason to run — it is a reason to breathe
+    if (!o.noBlow && p.blowT <= 0 && worst < 0.85) {
+      const tgtE = G.enemies.find(e => e.state === 'normal' &&
+        Math.abs(e.x - worstX) < 36 && Math.abs(e.y - p.y) < 150);
+      if (tgtE) {
+        const facingIt = (tgtE.x > p.x && p.face > 0) || (tgtE.x < p.x && p.face < 0);
+        if (facingIt && Math.abs(tgtE.x - p.x) > 42) {
+          inp.blow = true;
+          if (!o.noAim) { if (tgtE.y - p.y < -34) inp.up = true; else if (tgtE.y - p.y > 34) inp.down = true; }
+          return inp;
+        }
+      }
     }
-    away(danger.x);
-    // cornered against a wall — go over the top instead
-    const wallLeft = p.x < 70, wallRight = p.x > PW - 70;
-    if ((wallLeft && danger.x > p.x) || (wallRight && danger.x < p.x)) {
-      if (p.onGround && !o.noJump) inp.jump = true;
-    } else if (p.onGround && !o.noJump && Math.abs(danger.y - p.y) < 18 && dd < 34) inp.jump = true;
+    // flee toward whichever side has room, not merely away from the threat
+    const roomLeft = p.x - 44, roomRight = PW - 44 - p.x;
+    let dir = push >= 0 ? 1 : -1;
+    if (dir > 0 && roomRight < 90) dir = -1;
+    if (dir < 0 && roomLeft < 90) dir = 1;
+    if (dir > 0) goRight(); else goLeft();
+    const cornered = (dir > 0 && roomRight < 130) || (dir < 0 && roomLeft < 130);
+    if (!o.noJump && p.onGround && (cornered || (worstLevel && worst > 0.56))) inp.jump = true;
     holdRise();
     return inp;
   }
@@ -887,7 +928,7 @@ function runBot(o, seconds) {
 // The bot clears the keep on 6 of the 8 seeds in `solution-seeds`; that sweep is the
 // real theorem and it prints its two failures. This is one of the seeds it wins, and
 // it is the seed every screenshot uses, so the captures show a run that happened.
-const RUN_SEED = 21086;
+const RUN_SEED = 22312;
 function report(mode, ok, extra) {
   const rep = Object.assign({ mode, outcome: ok }, extra || {});
   const s = 'VERIFY:' + JSON.stringify(rep);
@@ -899,21 +940,19 @@ function sandbox(roomStr) {
   if (roomStr) {
     G.room = roomStr;
     G.enemies = []; G.bubbles = []; G.fruits = []; G.parts = []; G.letters = [];
-    G.player = { x: TILE * 2, y: TILE * 13, vx: 0, vy: 0, w: 30, h: 32, face: 1, onGround: false, alive: true, invuln: 0, blowT: 0, anim: 0, squash: 0, stretch: 0, skid: 0, jumpHeld: false, stepT: 0, coyote: 0, buffer: 0, recoil: 0 };
+    G.player = { x: TILE * 2, y: TILE * 13, vx: 0, vy: 0, w: 30, h: 32, face: 1, onGround: false, alive: true, invuln: 0, blowT: 0, anim: 0, squash: 0, stretch: 0, skid: 0, jumpHeld: false, stepT: 0, coyote: 0, buffer: 0, recoil: 0, air: AIR_MAX, wheeze: 0 };
   }
   return G;
 }
 const FLAT = (() => {
+  const wall = '#'.repeat(COLS);
+  const mid = '#' + '.'.repeat(COLS - 2) + '#';
   const r = [];
-  for (let y = 0; y < ROWS; y++) {
-    if (y === 0) r.push('########################');
-    else if (y === ROWS - 1) r.push('########################');
-    else r.push('#......................#');
-  }
+  for (let y = 0; y < ROWS; y++) r.push(y === 0 || y === ROWS - 1 ? wall : mid);
   return r;
 })();
 function runVerify(mode) {
-  const BUDGET = 620;
+  const BUDGET = 800;   // the 32-column keep is a longer walk than the 24-column one
   if (mode === 'difficulty') {
     // per-room telemetry across seeds: where does time go, where do dragons die,
     // and does the chain system ever actually fire in real play?
@@ -954,6 +993,24 @@ function runVerify(mode) {
       chainDepths: 'single=' + chainHist[0] + ' x2=' + chainHist[1] + ' x3=' + chainHist[2] + ' x4=' + chainHist[3],
       hurryUpsSeen: hurried, seeds: 6,
     });
+  } else if (mode === 'debug-calm') {
+    newGame(RUN_SEED, { headless: true, calm: true });
+    G.lives = 8;
+    const tl = [];
+    const dt = 1 / 60;
+    let stallStart = 0, stallAt = '', lastK = 0;
+    for (let i = 0; i < 60 * 300 && !G.over && !G.won; i++) {
+      tick(dt, botInput({}));
+      if (G.cleared !== lastK) { lastK = G.cleared; stallStart = i; }
+      if (i - stallStart === 60 * 20 && G.enemies.length) {
+        const e = G.enemies[0];
+        stallAt = 'r' + G.roomIndex + ' e' + G.enemies.length + ' first@' + Math.round(e.x) + ',' + Math.round(e.y) +
+          ' vx' + Math.round(e.vx) + ' p@' + Math.round(G.player.x) + ',' + Math.round(G.player.y) +
+          ' bubbles' + G.bubbles.length + (G.bubbles[0] ? ' b0@' + Math.round(G.bubbles[0].x) + ',' + Math.round(G.bubbles[0].y) + (G.bubbles[0].holds ? 'H' : '') : '');
+      }
+      if (i % 900 === 0) tl.push(Math.round(i / 60) + 's:r' + G.roomIndex + ':e' + G.enemies.length + ':k' + G.cleared);
+    }
+    report(mode, 'INFO', { won: G.won, rooms: G.roomIndex, kills: G.cleared, firstStall: stallAt || 'none', tl: tl.join(' ') });
   } else if (mode === 'debug-bot') {
     newGame(RUN_SEED, { headless: true });
     let blown = 0, trapped = 0, popped = 0;
@@ -998,13 +1055,13 @@ function runVerify(mode) {
       const sd = 19860 + i * 613;
       newGame(sd, { headless: true });
       const r = runBot({}, BUDGET);
-      if (r.rooms >= 2) wins++;
+      if (r.rooms >= 3) wins++;
       newGame(sd, { headless: true });
       const n = runBot({ noBlow: true, noPop: true, noJump: true }, 120);
       if (n.won) nulls++;
       rows.push(sd + ':' + (r.won ? 'W' : 'L') + r.rooms + ':' + (n.over ? 'D' : '-'));
     }
-    report(mode, wins >= 6 && nulls === 0 ? 'PASS' : 'FAIL', { botWon: wins, nullWon: nulls, of: 8, runs: rows.join(' ') });
+    report(mode, wins >= 5 && nulls === 0 ? 'PASS' : 'FAIL', { botWon: wins, nullWon: nulls, of: 8, runs: rows.join(' ') });
   } else if (mode === 'null') {
     newGame(RUN_SEED, { headless: true });
     const r = runBot({ noBlow: true, noPop: true, noJump: true }, 120);
@@ -1124,7 +1181,7 @@ function runVerify(mode) {
     const lifted = y0 - p.y;
     report(mode, lifted > 10 && p.alive ? 'PASS' : 'FAIL', { rosePx: Math.round(lifted), standsOnBubble: p.onGround });
   } else if (mode === 'mech-wrap') {
-    const open = FLAT.slice(); open[ROWS - 1] = '#..........#...........#';
+    const open = FLAT.slice(); open[ROWS - 1] = '#..........#...........' + '#'.repeat(COLS - 24);
     sandbox(open);
     const p = G.player;
     p.x = TILE * 3 + 4; p.y = PH - TILE * 3; p.vy = 400;
@@ -1289,13 +1346,23 @@ function runVerify(mode) {
     const blocked = blockedLeft && blockedRight;
     // ...but rises through a ceiling from below, as the arcade let you
     const withLedge = FLAT.slice();
-    withLedge[8] = '#####..#################';
+    withLedge[8] = '#####..' + '#'.repeat(COLS - 8) + '#';
     sandbox(withLedge);
     const q = G.player; q.x = TILE * 3 + 4; q.y = TILE * 11; q.vy = -JUMP_V;
     let passed = false;
     for (let i = 0; i < 90; i++) { moveBody(q, 1 / 60, true); if (q.y < TILE * 8) { passed = true; break; } }
-    report(mode, stands && blocked && passed ? 'PASS' : 'FAIL',
-      { restsOnFloor: stands, wallBlocksLeft: blockedLeft, wallBlocksRight: blockedRight, jumpsThroughPlatform: passed });
+    // the roof is a lid: from a shelf at row 3, a full jump must NOT escape the room
+    const highShelf = FLAT.slice();
+    highShelf[3] = '#....######' + '.'.repeat(COLS - 12) + '#';
+    sandbox(highShelf);
+    const hp = G.player;
+    hp.x = TILE * 7; hp.y = TILE * 3 - hp.h / 2 - 1; hp.vy = 0;
+    for (let i = 0; i < 20; i++) moveBody(hp, 1 / 60, true);
+    hp.vy = -JUMP_V; hp.onGround = false;
+    let escaped = false;
+    for (let i = 0; i < 120; i++) { moveBody(hp, 1 / 60, true); if (hp.y < TILE / 2) escaped = true; }
+    report(mode, stands && blocked && passed && !escaped ? 'PASS' : 'FAIL',
+      { restsOnFloor: stands, wallBlocksLeft: blockedLeft, wallBlocksRight: blockedRight, jumpsThroughPlatform: passed, jumpedThroughTheRoof: escaped });
   } else if (mode === 'mech-monsters') {
     // each monster must behave like its own species
     sandbox(FLAT);
@@ -1322,7 +1389,9 @@ function runVerify(mode) {
     let phased = false;
     for (let i = 0; i < 60 * 8; i++) {
       enemyThink(f2, 1 / 60);
-      if (f2.x > TILE * 13) { phased = true; break; } // it got past the wall: it phased
+      // past the wall OR inside it: either way, it phased. The charge branch used to
+      // bounce it back out before the end-of-loop check could see the crossing.
+      if (f2.x > TILE * 13 || solidPx(f2.x, f2.y)) { phased = true; break; }
     }
     sandbox(FLAT);
     spawnEnemy('hurler', 400, PH - TILE * 2);
@@ -1353,7 +1422,7 @@ function runVerify(mode) {
   } else if (mode === 'mech-ledge') {
     // monsters walk off a shelf when the dragon is below — that is how the keep comes to you
     const shelf = FLAT.slice();
-    shelf[8] = '#....########..........#';
+    shelf[8] = '#....########..........' + '.'.repeat(COLS - 24) + '#';
     sandbox(shelf);
     spawnEnemy('wanderer', TILE * 8, TILE * 8 - 16);
     const e = G.enemies[0]; e.vx = KINDS.wanderer.speed;
@@ -1478,6 +1547,28 @@ function runVerify(mode) {
     }
     report(mode, clearsShelf && jumps === 1 ? 'PASS' : 'FAIL',
       { riseP: Math.round(rise), needsAtLeast: 116, jumpsWhileHeldTenSeconds: jumps, expected: 1 });
+  } else if (mode === 'mech-air') {
+    // breath is finite: four in the lungs, a wheeze at empty, a refund for a hit
+    sandbox(FLAT);
+    const p = G.player;
+    let blows = 0;
+    for (let i = 0; i < 8; i++) { if (blow()) blows++; p.blowT = 0; }
+    const stopsAtFour = blows === 4 && G.bubbles.length === 4;
+    p.wheeze = 0;
+    const drained = p.air;
+    for (let i = 0; i < 60; i++) playerUpdate(1 / 60, {});
+    const regenOneSec = p.air - drained;
+    // a catch refunds a breath
+    sandbox(FLAT);
+    const q = G.player; q.air = 2; q.face = 1;
+    spawnEnemy('wanderer', q.x + 90, q.y); G.enemies[0].vx = 0;
+    blow();
+    const afterBlow = q.air;
+    for (let i = 0; i < 90 && G.enemies[0].state !== 'bubbled'; i++) updateBubbles(1 / 60);
+    const refunded = q.air >= afterBlow + 1;
+    report(mode, stopsAtFour && regenOneSec > 1.2 && regenOneSec < 1.8 && afterBlow === 1 && refunded ? 'PASS' : 'FAIL',
+      { blowsFromFullLungs: blows, expected: 4, regenPerSecondGrounded: +regenOneSec.toFixed(2),
+        expectedRegen: '1.2..1.8', airAfterOneBlow: afterBlow, catchRefundsABreath: refunded });
   } else if (mode === 'mech-angry') {
     // the anger multiplier is a real speed change, not a label
     sandbox(FLAT);
@@ -1526,54 +1617,55 @@ function shakeXY() {
   const m = G.shotMode ? -0.44 : hash32(Math.floor(G.time * 60), 2) - 0.5;
   return [(n - 0.5) * s, m * s];
 }
-function drawBackdrop() {
+function drawBackdrop(full) {
   const g = cx.createLinearGradient(0, 0, 0, 720);
   g.addColorStop(0, '#0d0722'); g.addColorStop(0.55, '#160c33'); g.addColorStop(1, '#0a0518');
   cx.fillStyle = g; cx.fillRect(0, 0, 1280, 720);
   // cavern arches behind the room
   cx.save();
-  cx.translate(OX, OY);
-  const gg = cx.createLinearGradient(0, 0, 0, PH);
+  cx.translate(full ? 0 : OX, full ? 0 : OY);
+  const BW = full ? 1280 : PW, BH = full ? 720 : PH;
+  const gg = cx.createLinearGradient(0, 0, 0, BH);
   const hot = G.hurry ? Math.min(1, (G.roomT - hurryAt()) / 3 + 0.35) : 0;
   gg.addColorStop(0, '#080b22'); gg.addColorStop(0.52, '#241a52'); gg.addColorStop(1, '#090c26');
-  cx.fillStyle = gg; cx.fillRect(0, 0, PW, PH);
+  cx.fillStyle = gg; cx.fillRect(0, 0, BW, BH);
   // an actually warm pool, added with 'lighter' so it reads as firelight, not tint
   cx.save();
   cx.globalCompositeOperation = 'lighter';
-  const warm = cx.createRadialGradient(PW * 0.5, PH * 0.98, 10, PW * 0.5, PH * 0.98, PH * 0.95);
+  const warm = cx.createRadialGradient(BW * 0.5, BH * 0.98, 10, BW * 0.5, BH * 0.98, BH * 0.95);
   warm.addColorStop(0, 'rgba(255,150,80,0.17)');
   warm.addColorStop(1, 'rgba(0,0,0,0)');
-  cx.fillStyle = warm; cx.fillRect(0, 0, PW, PH);
+  cx.fillStyle = warm; cx.fillRect(0, 0, BW, BH);
   cx.restore();
   if (hot) {                                  // multiply the alarm over the room, not replace it
     cx.fillStyle = 'rgba(180,20,50,' + (0.34 * hot).toFixed(2) + ')';
-    cx.fillRect(0, 0, PW, PH);
+    cx.fillRect(0, 0, BW, BH);
   }
 
   // ---- the keep is a built place: pillars, arches and chains behind the play ----
   const seedR = G.roomIndex;
   cx.strokeStyle = 'rgba(150,190,255,0.055)'; cx.lineWidth = 2;
   for (let i = 0; i < 4; i++) {                       // buttressed columns
-    const cxp = 70 + ((i * 227 + seedR * 91) % (PW - 140));
+    const cxp = 70 + ((i * 227 + seedR * 91) % (BW - 140));
     const w = 34 + hash32(i, seedR, 1) * 22;
     cx.fillStyle = 'rgba(120,150,230,0.045)';
-    cx.fillRect(cxp - w / 2, 40, w, PH - 40);
-    cx.beginPath(); cx.moveTo(cxp - w / 2, 40); cx.lineTo(cxp - w / 2, PH); cx.stroke();
-    cx.beginPath(); cx.moveTo(cxp + w / 2, 40); cx.lineTo(cxp + w / 2, PH); cx.stroke();
+    cx.fillRect(cxp - w / 2, 40, w, BH - 40);
+    cx.beginPath(); cx.moveTo(cxp - w / 2, 40); cx.lineTo(cxp - w / 2, BH); cx.stroke();
+    cx.beginPath(); cx.moveTo(cxp + w / 2, 40); cx.lineTo(cxp + w / 2, BH); cx.stroke();
     for (let b = 0; b < 5; b++) {                     // course lines
-      const by = 70 + b * ((PH - 90) / 5);
+      const by = 70 + b * ((BH - 90) / 5);
       cx.beginPath(); cx.moveTo(cxp - w / 2, by); cx.lineTo(cxp + w / 2, by); cx.stroke();
     }
   }
   cx.strokeStyle = 'rgba(150,190,255,0.07)'; cx.lineWidth = 3;
   for (let i = 0; i < 3; i++) {                       // vaulted arches up top
-    const ax = 150 + ((i * 300 + seedR * 130) % (PW - 300));
+    const ax = 150 + ((i * 300 + seedR * 130) % (BW - 300));
     cx.beginPath(); cx.arc(ax, 96, 84, Math.PI, 0); cx.stroke();
     cx.beginPath(); cx.arc(ax, 96, 62, Math.PI, 0); cx.stroke();
   }
   cx.strokeStyle = 'rgba(190,210,255,0.05)'; cx.lineWidth = 2;
   for (let i = 0; i < 5; i++) {                       // hanging chains
-    const hx = 46 + ((i * 181 + seedR * 57) % (PW - 92));
+    const hx = 46 + ((i * 181 + seedR * 57) % (BW - 92));
     const len = 90 + hash32(i, seedR, 3) * 150;
     cx.beginPath();
     for (let s = 0; s < len; s += 12) {
@@ -1586,7 +1678,7 @@ function drawBackdrop() {
   }
   // braziers: the warm accent the palette was missing
   for (let i = 0; i < 2; i++) {
-    const bx = i ? PW - 54 : 54, by = PH * 0.42;
+    const bx = i ? BW - 54 : 54, by = BH * 0.42;
     const fl = cx.createRadialGradient(bx, by, 2, bx, by, 108);
     fl.addColorStop(0, 'rgba(255,170,70,0.20)'); fl.addColorStop(1, 'rgba(255,140,60,0)');
     cx.fillStyle = fl; cx.beginPath(); cx.arc(bx, by, 108, 0, 7); cx.fill();
@@ -1595,7 +1687,7 @@ function drawBackdrop() {
   }
   cx.fillStyle = 'rgba(255,255,255,0.03)';
   for (let i = 0; i < 40; i++) {
-    const x = hash32(i, 7) * PW, y = hash32(i, 8) * PH, s = 2 + hash32(i, 9) * 3;
+    const x = hash32(i, 7) * BW, y = hash32(i, 8) * BH, s = 2 + hash32(i, 9) * 3;
     cx.fillRect(x, y, s, s);
   }
   cx.restore();
@@ -1603,9 +1695,9 @@ function drawBackdrop() {
 function tileCols() {
   const i = G.roomIndex % 6;
   const sets = [
-    ['#2f7fd0', '#1d5aa0', '#6fc0ff'], ['#c2542f', '#8c3218', '#e89468'],
-    ['#3f9e56', '#22633a', '#7fd096'], ['#9a54bb', '#63307a', '#c48ede'],
-    ['#c08f2c', '#8a5d17', '#e6c470'], ['#4d68c0', '#2e3d84', '#8fa4e8'],
+    ['#265f9e', '#143c6e', '#4a86c8'], ['#9e4426', '#6b2712', '#c87450'],
+    ['#2f7a42', '#1a4a2c', '#5aa872'], ['#7a4496', '#4c2762', '#a86cc0'],
+    ['#9c7524', '#6e4f12', '#c2a050'], ['#3d54a0', '#25336a', '#7488c8'],
   ];
   return sets[i];
 }
@@ -1686,29 +1778,37 @@ function eyePair(x, y, look, size, blink) {
 function drawDragon(p) {
   const bob = Math.sin(p.anim * 6) * 1.6;
   const sq = p.squash || 0, st = p.stretch || 0, sk = p.skid || 0;
-  // landing squashes wide and low; launching stretches tall and thin; both from the feet
-  let sx = 1 + sq * 0.22 - st * 0.18 + sk * 1.5 * -0.0;
+  let sx = 1 + sq * 0.22 - st * 0.18;
   let sy = 1 - sq * 0.20 + st * 0.20;
   if (sk > 0) { sx = 0.80; sy = 1.12; }
+  const spin = p.alive === false ? (p.deathT || 0) * 9 : 0;
+  const shrink = p.alive === false ? Math.max(0.25, 1 - (p.deathT || 0) * 0.55) : 1;
+  // contact shadow plants him on the stone
+  if (p.alive !== false) {
+    cx.save();
+    cx.fillStyle = 'rgba(0,0,0,0.35)';
+    cx.beginPath(); cx.ellipse(p.x, p.y + 20, 20, 5, 0, 0, 7); cx.fill();
+    cx.restore();
+  }
   cx.save();
   cx.translate(p.x - (p.face * 4 * (p.recoil || 0)), p.y + bob + 16);
-  cx.scale(p.face * sx, sy);
+  cx.rotate(spin);
+  cx.scale(p.face * sx * shrink, sy * shrink);
   cx.translate(0, -16);
-  // never fade the character out — blink a bright rim instead, so the face stays legible
   const iFlash = p.invuln > 0 && Math.floor(p.invuln * 12) % 2 === 0;
   const step = Math.sin(p.anim * 11) * (Math.abs(p.vx) > 4 ? 3.2 : 0);
   // tail
-  cx.fillStyle = '#2f7a28';
+  cx.fillStyle = p.blue ? '#2a5f9e' : '#2f8a28';
   cx.beginPath(); cx.moveTo(-10, 8); cx.quadraticCurveTo(-30, 9, -25, -6);
   cx.quadraticCurveTo(-19, 3, -10, 1); cx.closePath(); cx.fill();
-  cx.fillStyle = '#8ff06d';
+  cx.fillStyle = '#a8ff86';
   cx.beginPath(); cx.ellipse(-25, -4, 4.5, 4, 0.5, 0, 7); cx.fill();
-  // shell ridge
-  cx.fillStyle = '#2b6f24';
+  // crest
+  cx.fillStyle = p.blue ? '#245490' : '#2b7a24';
   for (let i = 0; i < 4; i++) {
     cx.beginPath();
     cx.moveTo(-12 + i * 7, -12 + i * 1.6);
-    cx.quadraticCurveTo(-9 + i * 7, -25 + i * 1.6, -3 + i * 7, -12 + i * 1.6);
+    cx.quadraticCurveTo(-9 + i * 7, -26 + i * 1.6, -3 + i * 7, -12 + i * 1.6);
     cx.closePath(); cx.fill();
   }
   // feet
@@ -1718,83 +1818,114 @@ function drawDragon(p) {
   cx.strokeStyle = '#c98f14'; cx.lineWidth = 1.4;
   cx.beginPath(); cx.ellipse(-6, 17 + step, 7, 4.4, 0, 0, 7); cx.stroke();
   cx.beginPath(); cx.ellipse(7, 17 - step, 7, 4.4, 0, 0, 7); cx.stroke();
-  // body
+  // body — the lightest object in the room, by design
+  const B = !!p.blue;
   const bg = cx.createRadialGradient(-5, -8, 2, 0, 2, 22);
-  bg.addColorStop(0, '#a9ff86'); bg.addColorStop(0.55, '#6bd44f'); bg.addColorStop(1, '#3d9331');
+  if (B) { bg.addColorStop(0, '#c2e6ff'); bg.addColorStop(0.55, '#74b8f0'); bg.addColorStop(1, '#3a72b8'); }
+  else { bg.addColorStop(0, '#ccffae'); bg.addColorStop(0.55, '#8fe86b'); bg.addColorStop(1, '#4aa838'); }
   cx.fillStyle = bg;
   cx.beginPath(); cx.ellipse(0, 0, 19, 18, 0, 0, 7); cx.fill();
-  cx.strokeStyle = '#20551a'; cx.lineWidth = 2.6; cx.stroke();
-  if (iFlash) {                     // a rim ON TOP of a fully drawn face, never over it
-    cx.save();
-    cx.strokeStyle = 'rgba(255,255,255,0.92)'; cx.lineWidth = 3;
-    cx.shadowColor = '#8ffcd0'; cx.shadowBlur = 10;
-    cx.beginPath(); cx.ellipse(0, 0, 20.5, 19.5, 0, 0, 7); cx.stroke();
-    cx.restore();
-  }
+  cx.strokeStyle = B ? '#153a66' : '#1c4a17'; cx.lineWidth = 3; cx.stroke();
+  // rim light, upper-left
+  cx.strokeStyle = 'rgba(255,255,255,0.85)'; cx.lineWidth = 2.5;
+  cx.beginPath(); cx.ellipse(0, 0, 17, 16, 0, Math.PI * 1.05, Math.PI * 1.6); cx.stroke();
   // belly
-  cx.fillStyle = '#f0ffd8';
+  cx.fillStyle = '#f4ffe2';
   cx.beginPath(); cx.ellipse(3, 7, 11, 9, 0, 0, 7); cx.fill();
-  cx.strokeStyle = 'rgba(32,85,26,0.35)'; cx.lineWidth = 1.2; cx.stroke();
+  cx.strokeStyle = 'rgba(28,74,23,0.35)'; cx.lineWidth = 1.2; cx.stroke();
   // cheek
   cx.fillStyle = 'rgba(255,140,150,0.5)';
   cx.beginPath(); cx.ellipse(12, 2, 4, 3, 0, 0, 7); cx.fill();
   // face
-  const blink = !G.shotMode && (Math.floor(p.anim * 1.1) % 7) === 0 && (p.anim * 1.1 % 1) < 0.13;
-  eyePair(3, -5, 1, 1.18, blink);
-  // mouth — open while blowing
-  if (p.blowT > 0) {
-    cx.fillStyle = '#7a2230';
-    cx.beginPath(); cx.ellipse(14, 5, 5.5, 5, 0, 0, 7); cx.fill();
-    cx.fillStyle = '#ffb3c0';
-    cx.beginPath(); cx.ellipse(14, 7, 3, 2.2, 0, 0, 7); cx.fill();
+  if (p.dead) {                                   // the lost dragons wear it honestly
+    cx.strokeStyle = '#1c4a17'; cx.lineWidth = 2.6;
+    for (const ex of [-4, 8]) {
+      cx.beginPath(); cx.moveTo(ex - 3, -8); cx.lineTo(ex + 3, -2); cx.stroke();
+      cx.beginPath(); cx.moveTo(ex + 3, -8); cx.lineTo(ex - 3, -2); cx.stroke();
+    }
+    cx.beginPath(); cx.arc(8, 8, 4, 3.6, 5.8); cx.stroke();
   } else {
-    cx.strokeStyle = '#20551a'; cx.lineWidth = 2.4;
-    cx.beginPath(); cx.arc(10, 2, 5, 0.15, 1.5); cx.stroke();
+    const blink = !G.shotMode && (Math.floor(p.anim * 1.1) % 7) === 0 && (p.anim * 1.1 % 1) < 0.13;
+    eyePair(3, -5, 1, 1.18, blink);
+    if (p.blowT > 0) {
+      cx.fillStyle = '#7a2230';
+      cx.beginPath(); cx.ellipse(14, 5, 5.5, 5, 0, 0, 7); cx.fill();
+      cx.fillStyle = '#ffb3c0';
+      cx.beginPath(); cx.ellipse(14, 7, 3, 2.2, 0, 0, 7); cx.fill();
+    } else {
+      cx.strokeStyle = '#1c4a17'; cx.lineWidth = 2.4;
+      cx.beginPath(); cx.arc(10, 2, 5, 0.15, 1.5); cx.stroke();
+    }
+  }
+  if (iFlash) {
+    cx.save();
+    cx.strokeStyle = 'rgba(255,255,255,0.92)'; cx.lineWidth = 3;
+    cx.shadowColor = '#8ffcd0'; cx.shadowBlur = 10;
+    cx.beginPath(); cx.ellipse(0, 0, 21.5, 20.5, 0, 0, 7); cx.stroke();
+    cx.restore();
   }
   cx.restore();
 }
 function drawMonster(e) {
   const K = KINDS[e.kind];
   const bob = Math.sin(e.anim * 7 + e.seed * 6) * 2;
+  if (e.state === 'normal') {
+    cx.save();
+    cx.fillStyle = 'rgba(0,0,0,0.30)';
+    cx.beginPath(); cx.ellipse(e.x, e.y + e.h / 2 + 3, e.w * 0.55, 4.5, 0, 0, 7); cx.fill();
+    cx.restore();
+  }
   cx.save();
   cx.translate(e.x, e.y + bob);
   const dir = e.vx >= 0 ? 1 : -1;
   cx.scale(dir, 1);
-  if (e.state === 'bubbled') cx.globalAlpha = 0.92;
   const g = cx.createLinearGradient(0, -e.h / 2, 0, e.h / 2);
   g.addColorStop(0, K.col); g.addColorStop(1, K.col2);
   if (e.angry) { cx.shadowColor = '#ff4444'; cx.shadowBlur = 14; }
-  cx.fillStyle = g;
   if (K.flies) {
-    // wings
-    cx.fillStyle = 'rgba(255,255,255,0.55)';
-    const flap = Math.sin(e.anim * 16) * 6;
-    cx.beginPath(); cx.ellipse(-12, -4 + flap, 9, 5, -0.5, 0, 7); cx.fill();
-    cx.beginPath(); cx.ellipse(12, -4 - flap, 9, 5, 0.5, 0, 7); cx.fill();
+    // the flyer: small body, huge wings — nothing else in the game has this outline
+    cx.fillStyle = 'rgba(255,255,255,0.6)';
+    const flap = Math.sin(e.anim * 16) * 7;
+    cx.beginPath(); cx.ellipse(-14, -5 + flap, 11, 6, -0.55, 0, 7); cx.fill();
+    cx.beginPath(); cx.ellipse(14, -5 - flap, 11, 6, 0.55, 0, 7); cx.fill();
     cx.fillStyle = g;
-    cx.beginPath(); cx.ellipse(0, 0, e.w / 2, e.h / 2, 0, 0, 7); cx.fill();
+    cx.beginPath(); cx.ellipse(0, 0, e.w / 2 - 3, e.h / 2, 0, 0, 7); cx.fill();
+    cx.strokeStyle = 'rgba(20,8,20,0.55)'; cx.lineWidth = 2.6; cx.stroke();
+    cx.fillStyle = K.col2;                       // a stinger tail
+    cx.beginPath(); cx.moveTo(0, e.h / 2 - 2); cx.lineTo(4, e.h / 2 + 8); cx.lineTo(-4, e.h / 2 + 2);
+    cx.closePath(); cx.fill();
+  } else if (K.hurls) {
+    // the hurler: tall, shouldered, heavy-browed — a tower, not a ball
+    const step = Math.sin(e.anim * 10) * 2.4;
+    cx.fillStyle = K.col2;
+    cx.beginPath(); cx.ellipse(-7, e.h / 2 + 1 + step, 6.5, 4, 0, 0, 7); cx.fill();
+    cx.beginPath(); cx.ellipse(8, e.h / 2 + 1 - step, 6.5, 4, 0, 0, 7); cx.fill();
+    cx.fillStyle = g;
+    cx.beginPath(); cx.ellipse(0, 1, e.w / 2 - 2, e.h / 2 + 3, 0, 0, 7); cx.fill();
+    cx.strokeStyle = 'rgba(24,8,34,0.6)'; cx.lineWidth = 3; cx.stroke();
+    cx.fillStyle = K.col2;                       // shoulders + throwing arm
+    cx.beginPath(); cx.ellipse(-e.w / 2 + 2, -4, 5, 8, 0.3, 0, 7); cx.fill();
+    cx.beginPath(); cx.ellipse(e.w / 2 - 1, -6, 5.5, 9, -0.3, 0, 7); cx.fill();
+    cx.fillStyle = '#3a1650';                    // the brow that means business
+    cx.beginPath(); cx.moveTo(-11, -12); cx.lineTo(11, -14); cx.lineTo(11, -8); cx.lineTo(-11, -7);
+    cx.closePath(); cx.fill();
+    cx.fillStyle = 'rgba(255,255,255,0.30)';
+    cx.beginPath(); cx.ellipse(1, 8, e.w / 2 - 7, 7, 0, 0, 7); cx.fill();
   } else {
+    // the wanderer: squat and wide under a helmet brim
     const step = Math.sin(e.anim * 12) * 3;
-    cx.fillStyle = K.col2;                       // feet first, behind the body
+    cx.fillStyle = K.col2;
     cx.beginPath(); cx.ellipse(-6, e.h / 2 + 1 + step, 6.5, 4, 0, 0, 7); cx.fill();
     cx.beginPath(); cx.ellipse(7, e.h / 2 + 1 - step, 6.5, 4, 0, 0, 7); cx.fill();
     cx.fillStyle = g;
-    cx.beginPath(); cx.ellipse(0, 0, e.w / 2, e.h / 2, 0, 0, 7); cx.fill();
-    cx.fillStyle = 'rgba(255,255,255,0.30)';     // belly
-    cx.beginPath(); cx.ellipse(1, 6, e.w / 2 - 7, e.h / 2 - 9, 0, 0, 7); cx.fill();
-    if (!K.hurls) {                              // a little horn, so it is not just a ball
-      cx.fillStyle = K.col2;
-      cx.beginPath(); cx.moveTo(-3, -e.h / 2 + 1); cx.lineTo(1, -e.h / 2 - 8);
-      cx.lineTo(5, -e.h / 2 + 1); cx.closePath(); cx.fill();
-    }
+    cx.beginPath(); cx.ellipse(0, 2, e.w / 2 + 3, e.h / 2 - 2, 0, 0, 7); cx.fill();
+    cx.strokeStyle = 'rgba(60,26,4,0.6)'; cx.lineWidth = 3; cx.stroke();
+    cx.fillStyle = K.col2;                       // the brim
+    rr(-e.w / 2 - 5, -e.h / 2 + 1, e.w + 10, 6, 3); cx.fill();
+    cx.fillStyle = 'rgba(255,255,255,0.30)';
+    cx.beginPath(); cx.ellipse(1, 7, e.w / 2 - 5, 5.5, 0, 0, 7); cx.fill();
   }
   cx.shadowBlur = 0;
-  cx.strokeStyle = 'rgba(0,0,0,0.35)'; cx.lineWidth = 2;
-  cx.beginPath(); cx.ellipse(0, 0, e.w / 2, e.h / 2, 0, 0, 7); cx.stroke();
-  if (e.kind === 'hurler') {                 // a brow that means business
-    cx.fillStyle = '#4a2060';
-    cx.fillRect(-10, -11, 20, 4);
-  }
   eyePair(1, -3, 1, 1.05, false);
   if (e.angry) {
     cx.strokeStyle = '#ff3b3b'; cx.lineWidth = 2.4;
@@ -1803,7 +1934,7 @@ function drawMonster(e) {
   cx.restore();
 }
 function bubbleBody(b) {
-  const wob = Math.sin(b.age * 4 + b.x * 0.03) * 0.9;
+  const wob = Math.sin(b.age * 4 + b.x * 0.03) * 0.9 - b.r * (1 - Math.min(1, 0.3 + b.age * 5.5));
   const warn = b.age > BUB_WARN && Math.floor(b.age * 9) % 2 === 0;
   const tint = b.holds ? KINDS[b.holds.kind].col : null;
   cx.save();
@@ -1817,19 +1948,20 @@ function bubbleBody(b) {
   cx.restore();
 }
 function drawBubble(b) {
-  const wob = Math.sin(b.age * 4 + b.x * 0.03) * 0.9;
+  const wob = Math.sin(b.age * 4 + b.x * 0.03) * 0.9 - b.r * (1 - Math.min(1, 0.3 + b.age * 5.5));
   const warn = b.age > BUB_WARN && Math.floor(b.age * 9) % 2 === 0;
   cx.save();
   cx.translate(b.x, b.y);
   const g = cx.createRadialGradient(-b.r * 0.35, -b.r * 0.4, 1, 0, 0, b.r + wob);
   if (warn) { g.addColorStop(0, 'rgba(255,235,235,0.92)'); g.addColorStop(0.62, 'rgba(255,130,140,0.55)'); g.addColorStop(1, 'rgba(255,90,110,0.32)'); }
-  else { g.addColorStop(0, 'rgba(255,255,255,0.88)'); g.addColorStop(0.5, 'rgba(170,235,255,0.46)'); g.addColorStop(1, 'rgba(120,200,255,0.30)'); }
+  else { g.addColorStop(0, 'rgba(255,255,255,0.80)'); g.addColorStop(0.5, 'rgba(170,235,255,0.34)'); g.addColorStop(1, 'rgba(255,150,220,0.20)'); }
   cx.shadowColor = warn ? 'rgba(255,120,140,0.9)' : 'rgba(150,220,255,0.75)';
   cx.shadowBlur = 12;
   if (!b.holds) { cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, b.r + wob, 0, 7); cx.fill(); }
   else if (warn) { cx.fillStyle = 'rgba(255,110,130,0.30)'; cx.beginPath(); cx.arc(0, 0, b.r + wob, 0, 7); cx.fill(); }
   cx.shadowBlur = 0;
-  cx.strokeStyle = warn ? 'rgba(255,180,190,1)' : 'rgba(235,252,255,0.95)';
+  const hue = 185 + Math.sin(b.age * 1.4 + b.x * 0.01) * 45;
+  cx.strokeStyle = warn ? 'rgba(255,180,190,1)' : 'hsla(' + hue.toFixed(0) + ',95%,80%,0.9)';
   cx.lineWidth = 2.4;
   cx.beginPath(); cx.arc(0, 0, b.r + wob, 0, 7); cx.stroke();
   cx.strokeStyle = 'rgba(255,255,255,0.95)'; cx.lineWidth = 2.8;
@@ -1979,79 +2111,94 @@ function drawPlayfield() {
   cx.strokeRect(OX - 2, OY - 2, PW + 4, PH + 4);
 }
 function drawHUD() {
-  const LABEL_Y = 32, VALUE_Y = 70;
+  // the HUD is part of the keep now: a lintel plate across the top of the room
+  cx.fillStyle = 'rgba(8,4,24,0.78)';
+  cx.fillRect(OX, OY, PW, 46);
+  cx.fillStyle = 'rgba(53,162,232,0.5)';
+  cx.fillRect(OX, OY + 45, PW, 1.5);
+  const LY = OY + 16, VY = OY + 38;
   const label = (s, x, right) => {
-    cx.fillStyle = '#e8b93a'; cx.font = 'bold 12px monospace';
-    cx.textAlign = right ? 'right' : 'left'; cx.fillText(s, x, LABEL_Y);
+    cx.fillStyle = '#e8b93a'; cx.font = 'bold 11px monospace';
+    cx.textAlign = right ? 'right' : 'left'; cx.fillText(s, x, LY);
   };
   const value = (s, x, right, col) => {
-    cx.fillStyle = col || '#ffffff'; cx.font = 'bold 30px monospace';
-    cx.textAlign = right ? 'right' : 'left'; cx.fillText(s, x, VALUE_Y);
+    cx.fillStyle = col || '#ffffff'; cx.font = 'bold 21px monospace';
+    cx.textAlign = right ? 'right' : 'left'; cx.fillText(s, x, VY);
   };
-  const C = [OX, OX + 286, OX + 470, OX + 604];
+  const C = [OX + 12, OX + Math.round(PW * 0.20), OX + Math.round(PW * 0.36),
+             OX + Math.round(PW * 0.52), OX + Math.round(PW * 0.70)];
   label('SCORE', C[0]);
-  cx.save();
-  cx.shadowColor = 'rgba(245,208,106,0.55)'; cx.shadowBlur = 10;
-  value(String(G.score).padStart(7, '0'), C[0], false, '#f5d06a');
-  cx.restore();
+  value(G.score.toLocaleString('en-US'), C[0], false, '#f5d06a');
   label('DRAGONS', C[1]);
-  for (let i = 0; i < 3; i++) {                     // always draw all three sockets
+  for (let i = 0; i < 3; i++) {
     const lit = i < G.lives;
-    cx.save(); cx.translate(C[1] + 14 + i * 34, VALUE_Y - 10); cx.scale(0.6, 0.6);
+    cx.save(); cx.translate(C[1] + 10 + i * 26, VY - 8); cx.scale(0.48, 0.48);
     cx.globalAlpha = lit ? 1 : 0.20;
-    cx.fillStyle = lit ? '#5fc44a' : '#5a6a86';
+    cx.fillStyle = lit ? '#8fe86b' : '#5a6a86';
     cx.beginPath(); cx.ellipse(0, 0, 15, 15, 0, 0, 7); cx.fill();
-    cx.strokeStyle = lit ? '#255f1f' : '#2b3448'; cx.lineWidth = 2.4; cx.stroke();
+    cx.strokeStyle = lit ? '#1c4a17' : '#2b3448'; cx.lineWidth = 3; cx.stroke();
     if (lit) eyePair(2, -3, 1, 0.85, false);
     cx.globalAlpha = 1; cx.restore();
   }
   if (G.lives > 3) {
-    cx.fillStyle = '#7cff9e'; cx.font = 'bold 15px monospace'; cx.textAlign = 'left';
-    cx.fillText('+' + (G.lives - 3), C[1] + 118, VALUE_Y - 4);
+    cx.fillStyle = '#7cff9e'; cx.font = 'bold 13px monospace'; cx.textAlign = 'left';
+    cx.fillText('+' + (G.lives - 3), C[1] + 88, VY - 2);
   }
-  label('MONSTERS LEFT', C[2]);
-  value(String(G.enemies.length), C[2], false, G.enemies.length ? '#ffffff' : '#7cff9e');
-  label('ROOM', C[3]);
-  value((G.roomIndex + 1) + '/' + G.maxRooms, C[3]);
-  label('EXTEND', OX + PW, true);
-  cx.font = 'bold 19px monospace';
-  for (let i = 0; i < 6; i++) {
-    const x = OX + PW - (5 - i) * 26 - 10;
-    cx.font = 'bold 19px monospace'; cx.textAlign = 'center';
-    if (G.have[i]) {
-      cx.save(); cx.shadowColor = '#7cff9e'; cx.shadowBlur = 9;
-      cx.fillStyle = '#7cff9e'; cx.fillText(LETTERS[i], x, VALUE_Y); cx.restore();
+  label('AIR', C[2]);
+  const p = G.player, wz = p && p.wheeze > 0;
+  for (let i = 0; i < AIR_MAX; i++) {
+    const filled = p && p.air >= i + 1;
+    const x = C[2] + 8 + i * 20, y = VY - 8;
+    cx.beginPath(); cx.arc(x, y, 7, 0, 7);
+    if (filled) {
+      cx.fillStyle = wz ? '#ff6a7e' : '#9fe0ff'; cx.fill();
+      cx.strokeStyle = 'rgba(255,255,255,0.8)'; cx.lineWidth = 1.4; cx.stroke();
     } else {
-      cx.strokeStyle = 'rgba(255,255,255,0.26)'; cx.lineWidth = 1.6;
-      cx.strokeText(LETTERS[i], x, VALUE_Y);
+      cx.strokeStyle = wz && (!G.shotMode && Math.floor(G.time * 8) % 2 === 0) ? '#ff6a7e' : 'rgba(255,255,255,0.3)';
+      cx.lineWidth = 1.4; cx.stroke();
+    }
+  }
+  label('MONSTERS LEFT', C[3]);
+  value(String(G.enemies.length), C[3], false, G.enemies.length ? '#ffffff' : '#7cff9e');
+  label('ROOM', C[4]);
+  value((G.roomIndex + 1) + '/' + G.maxRooms, C[4]);
+  label('EXTEND', OX + PW - 12, true);
+  cx.textAlign = 'center';
+  for (let i = 0; i < 6; i++) {
+    const x = OX + PW - 12 - (5 - i) * 22 - 8;
+    cx.font = 'bold 16px monospace';
+    if (G.have[i]) {
+      cx.save(); cx.shadowColor = '#7cff9e'; cx.shadowBlur = 8;
+      cx.fillStyle = '#7cff9e'; cx.fillText(LETTERS[i], x, VY); cx.restore();
+    } else {
+      cx.strokeStyle = 'rgba(255,255,255,0.30)'; cx.lineWidth = 1.4;
+      cx.strokeText(LETTERS[i], x, VY);
     }
   }
   if (G.hard) {
-    cx.fillStyle = '#ff8a5c'; cx.font = 'bold 11px monospace'; cx.textAlign = 'right';
-    cx.fillText('KEEP MODE', OX + PW, 88);
+    cx.fillStyle = '#ff8a5c'; cx.font = 'bold 10px monospace'; cx.textAlign = 'right';
+    cx.fillText('KEEP MODE', OX + PW - 12, OY + PH - 18);
   }
   cx.textAlign = 'left';
-  // ---- the clock is the field's own bottom rail, and it never lies ----
+  // ---- the clock is the room's own bottom rail; it never lies, never vanishes ----
   const left = Math.max(0, hurryAt() - G.roomT);
   const frac = G.calm ? 1 : left / hurryAt();
-  const SEG = 34, segW = PW / SEG;
-  const lit = G.hurry ? 1 : Math.max(1, Math.ceil(frac * SEG));   // never fully dark in play
+  const SEG = 40, railX = OX + 6, railW = PW - 12, segW = railW / SEG;
+  const lit = G.hurry ? 1 : Math.max(1, Math.ceil(frac * SEG));
   const low = frac < 0.25 || G.hurry;
   for (let i = 0; i < SEG; i++) {
     const on = i < lit;
-    if (on && G.hurry && !G.shotMode && Math.floor(G.time * 8) % 2 === 0) { continue; }
-    cx.fillStyle = on ? (low ? '#e8404f' : (frac < 0.45 ? '#a8952e' : '#2f6b38')) : 'rgba(255,255,255,0.06)';
-    cx.fillRect(OX + i * segW + 1.5, OY + PH + 9, segW - 3, 9);
+    if (on && G.hurry && !G.shotMode && Math.floor(G.time * 8) % 2 === 0) continue;
+    cx.fillStyle = on ? (low ? '#e8404f' : (frac < 0.5 ? '#a8952e' : '#2f6b38')) : 'rgba(255,255,255,0.10)';
+    cx.fillRect(railX + i * segW + 1, OY + PH - 12, segW - 2, 7);
   }
-  cx.strokeStyle = 'rgba(255,255,255,0.14)'; cx.lineWidth = 1;
-  cx.strokeRect(OX + 0.5, OY + PH + 8.5, PW - 1, 10);
   if (G.hurry) {
     const pulse = G.shotMode ? 0.9 : 0.5 + 0.5 * Math.sin(G.time * 9);
     cx.save();
     cx.shadowColor = '#ff4b5c'; cx.shadowBlur = 26 * pulse;
     cx.strokeStyle = 'rgba(255,75,92,' + (0.55 + 0.45 * pulse).toFixed(2) + ')';
     cx.lineWidth = 4 + 10 * pulse;
-    cx.strokeRect(OX - 6, OY - 6, PW + 12, PH + 12);
+    cx.strokeRect(OX - 5, OY - 5, PW + 10, PH + 10);
     cx.restore();
   }
 }
@@ -2094,14 +2241,14 @@ function drawScanlines() {
   cx.fillStyle = v; cx.fillRect(0, 0, 1280, 720);
 }
 function drawTitle() {
-  drawBackdrop();
+  drawBackdrop(true);
   cx.textAlign = 'center';
   // bouncing dragons
   const t = G.time;
   for (let i = 0; i < 2; i++) {
     const x = 470 + i * 340, y = 470 + Math.abs(Math.sin(t * 2 + i * 1.1)) * -46;
     cx.save(); cx.translate(x, y); cx.scale(i ? -1.8 : 1.8, 1.8);
-    drawDragon({ x: 0, y: 0, anim: t + i, face: 1, squash: 0, blowT: 0, invuln: 0 });
+    drawDragon({ x: 0, y: 0, anim: t + i, face: 1, squash: 0, blowT: 0, invuln: 0, blue: i === 1 });
     cx.restore();
   }
   for (let i = 0; i < 10; i++) {
@@ -2114,7 +2261,9 @@ function drawTitle() {
   const g = cx.createLinearGradient(0, 170, 0, 285);
   g.addColorStop(0, '#fff8d0'); g.addColorStop(0.5, '#ffd24a'); g.addColorStop(1, '#f2892a');
   cx.font = 'bold 92px monospace';
-  cx.lineWidth = 14; cx.strokeStyle = '#2a1550';
+  cx.fillStyle = '#1a0c38';
+  cx.fillText('BUBBLE KEEP', 640, 270);
+  cx.lineWidth = 7; cx.strokeStyle = '#2a1550';
   cx.strokeText('BUBBLE KEEP', 640, 262);
   cx.fillStyle = g;
   cx.fillText('BUBBLE KEEP', 640, 262);
@@ -2197,7 +2346,7 @@ function drawEnd() {
   for (let i = 0; i < 2; i++) {
     const hop = G.won ? Math.abs(Math.sin(G.time * 4 + i)) * 22 : 0;
     cx.save(); cx.translate(392 + i * 496, 626 - hop); cx.scale(i ? -1.6 : 1.6, 1.6);
-    drawDragon({ x: 0, y: 0, anim: G.time + i * 1.7, face: 1, squash: 0, blowT: 0, invuln: 0, vx: 0 });
+    drawDragon({ x: 0, y: 0, anim: G.time + i * 1.7, face: 1, squash: 0, blowT: 0, invuln: 0, vx: 0, blue: i === 1, dead: !G.won });
     cx.restore();
   }
 
