@@ -293,6 +293,7 @@ function blow(aim) {
   if (p.air <= 0) { p.wheeze = WHEEZE; beep(70, 0.3, 'sawtooth'); }
   p.blowT = 0.24;
   p.recoil = 1;
+  p.squash = 0.55; p.stretch = 0;
   G.parts.push({ ring: true, x: p.x + p.face * 24, y: p.y - 2, t: 0, life: 0.16, r0: 8, r1: 34, w0: 4, col: '#dff6ff' });
   for (let i = 0; i < 4; i++) {
     const a = (hash32(i, Math.floor(p.x), 5) - 0.5) * 1.1;
@@ -335,7 +336,7 @@ function popBubble(b, byPlayer) {
     const sp = 260 + hash32(k, Math.floor(b.y), 2) * 260;
     G.parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
       t: 0, life: 0.5 + hash32(k, 3, 4) * 0.2, drag: 0.90, r: 3.4 + hash32(k, 5, 6) * 4.2,
-      col: k % 3 === 0 && b.holds ? KINDS[b.holds.kind].col : '#dff6ff' });
+      col: b.holds ? (k % 4 === 0 ? '#ffffff' : KINDS[b.holds.kind].col) : '#dff6ff' });
   }
   if (!b.holds) { beep(300, 0.04, 'sine'); return; }
   // a monster released from a burst bubble is a kill; several in one breath escalate
@@ -348,8 +349,10 @@ function popBubble(b, byPlayer) {
     pushPop(b.x, b.y, String(pts), step);
     G.shake = Math.max(G.shake, 0.75 + step * 0.30);
     G.freeze = Math.max(G.freeze, 0.09 + step * 0.035);
-    G.flash = { x: b.x, y: b.y, t: G.time, big: step > 0 };
-    G.flashLife = 0.16;
+    if (!G.flash || G.time - G.flash.t > 0.1) {
+      G.flash = { x: b.x, y: b.y, t: G.time, big: step > 0 };
+      G.flashLife = 0.22;
+    }
     G.parts.push({ ring: true, x: b.x, y: b.y, t: 0, life: 0.30, r0: 14, r1: 96, w0: 12, col: '#ffffff' });
     G.parts.push({ ring: true, x: b.x, y: b.y, t: -0.06, life: 0.34, r0: 14, r1: 132, w0: 7,
       col: b.holds ? KINDS[b.holds.kind].col : '#bfefff' });
@@ -368,7 +371,7 @@ function pushPop(x, y, txt, step) {
     lane--;
   }
   const px = Math.max(OXPAD, Math.min(PW - OXPAD, x));
-  G.pops.push({ x: px + ((G.pops.length % 2) ? 30 : -30), y: lane * LANE, lane: lane, t: G.time, txt: txt, step: step | 0 });
+  G.pops.push({ x: px + ((G.pops.length % 2) ? 30 : -30), y: lane * LANE - 26, lane: lane, t: G.time, txt: txt, step: step | 0 });
   if (G.pops.length > 8) G.pops.shift();
 }
 function dropFruit(x, y, tier) {
@@ -447,8 +450,12 @@ function enemyThink(e, dt) {
       e.charge -= dt;
       e.vy += (e.lockY - e.y) * 2.4 * dt;
       e.vx = Math.sign(e.vx || 1) * sp * 1.45;
-      e.x += e.vx * dt; e.y += e.vy * dt;
-      if (e.x < e.w || e.x > PW - e.w || solidPx(e.x, e.y)) { e.vx = -e.vx; e.x = Math.max(e.w, Math.min(PW - e.w, e.x)); }
+      // test BEFORE moving: the old charge stepped into the stone and checked afterward,
+      // leaving the flyer embedded in a wall for frames at a time
+      const cnx = e.x + e.vx * dt, cny = e.y + e.vy * dt;
+      if (cnx < e.w || cnx > PW - e.w || solidPx(cnx, e.y)) e.vx = -e.vx;
+      else e.x = cnx;
+      if (!solidPx(e.x, cny)) e.y = cny; else e.vy = -e.vy;
       if (e.charge <= 0) e.chargeT = 2.4;
       return;
     }
@@ -1388,9 +1395,8 @@ function runVerify(mode) {
     G.player.x = TILE * 18; G.player.y = TILE * 8;    // straight across, behind the stone
     let phased = false;
     for (let i = 0; i < 60 * 8; i++) {
+      f2.chargeT = 999; f2.charge = 0;   // drift only: a charge would bounce off the wall
       enemyThink(f2, 1 / 60);
-      // past the wall OR inside it: either way, it phased. The charge branch used to
-      // bounce it back out before the end-of-loop check could see the crossing.
       if (f2.x > TILE * 13 || solidPx(f2.x, f2.y)) { phased = true; break; }
     }
     sandbox(FLAT);
@@ -1613,8 +1619,8 @@ function shakeXY() {
   // meant every screenshot proved the shake did not exist
   const t = Math.min(1, G.shake);
   const s = 14 * t * t;
-  const n = G.shotMode ? 0.62 : hash32(Math.floor(G.time * 60), 1);
-  const m = G.shotMode ? -0.44 : hash32(Math.floor(G.time * 60), 2) - 0.5;
+  const n = G.shotMode ? 0.95 : hash32(Math.floor(G.time * 60), 1);
+  const m = G.shotMode ? -0.85 : hash32(Math.floor(G.time * 60), 2) - 0.5;
   return [(n - 0.5) * s, m * s];
 }
 function drawBackdrop(full) {
@@ -1627,7 +1633,7 @@ function drawBackdrop(full) {
   const BW = full ? 1280 : PW, BH = full ? 720 : PH;
   const gg = cx.createLinearGradient(0, 0, 0, BH);
   const hot = G.hurry ? Math.min(1, (G.roomT - hurryAt()) / 3 + 0.35) : 0;
-  gg.addColorStop(0, '#080b22'); gg.addColorStop(0.52, '#241a52'); gg.addColorStop(1, '#090c26');
+  gg.addColorStop(0, '#0b081e'); gg.addColorStop(0.52, '#1c1440'); gg.addColorStop(1, '#0a0920');
   cx.fillStyle = gg; cx.fillRect(0, 0, BW, BH);
   // an actually warm pool, added with 'lighter' so it reads as firelight, not tint
   cx.save();
@@ -1791,7 +1797,7 @@ function drawDragon(p) {
     cx.restore();
   }
   cx.save();
-  cx.translate(p.x - (p.face * 4 * (p.recoil || 0)), p.y + bob + 16);
+  cx.translate(p.x - (p.face * 7 * (p.recoil || 0)), p.y + bob + 16);
   cx.rotate(spin);
   cx.scale(p.face * sx * shrink, sy * shrink);
   cx.translate(0, -16);
@@ -2058,8 +2064,8 @@ function drawPlayfield() {
       cx.lineCap = 'round';
       cx.beginPath(); cx.moveTo(q.x, q.y);
       cx.lineTo(q.x - (q.vx || 0) * 0.022, q.y - (q.vy || 0) * 0.022); cx.stroke();
-      cx.fillStyle = '#ffffff';
-      cx.beginPath(); cx.arc(q.x, q.y, (q.r || 3) * (1 - k * 0.4) * 0.6, 0, 7); cx.fill();
+      cx.fillStyle = q.col;
+      cx.beginPath(); cx.arc(q.x, q.y, (q.r || 3) * (1 - k * 0.4) * 0.45, 0, 7); cx.fill();
       cx.restore();
     }
   }
@@ -2090,6 +2096,23 @@ function drawPlayfield() {
   }
   if (G.ghost) drawGhost(G.ghost);
   if (G.player) drawDragon(G.player);
+  if (G.flash) {
+    const fAge = G.time - G.flash.t;
+    if (fAge > (G.flashLife || 0.22)) G.flash = null;
+    else {
+      cx.save();
+      cx.globalCompositeOperation = 'lighter';
+      cx.globalAlpha = (1 - fAge / (G.flashLife || 0.22)) * 0.5;
+      const fr = (G.flash.big ? 88 : 60) * (0.3 + fAge / (G.flashLife || 0.22));
+      const fg = cx.createRadialGradient(G.flash.x, G.flash.y, 2, G.flash.x, G.flash.y, fr);
+      fg.addColorStop(0, 'rgba(255,255,255,0.85)');
+      fg.addColorStop(0.4, 'rgba(210,240,255,0.30)');
+      fg.addColorStop(1, 'rgba(255,255,255,0)');
+      cx.fillStyle = fg;
+      cx.beginPath(); cx.arc(G.flash.x, G.flash.y, fr, 0, 7); cx.fill();
+      cx.restore();
+    }
+  }
   for (const p of G.pops) {
     const age = G.time - p.t;
     const punch = age < 0.16 ? 0.45 + age / 0.16 * 0.9 : (age < 0.24 ? 1.35 - (age - 0.16) / 0.08 * 0.35 : 1);
@@ -2261,12 +2284,14 @@ function drawTitle() {
   const g = cx.createLinearGradient(0, 170, 0, 285);
   g.addColorStop(0, '#fff8d0'); g.addColorStop(0.5, '#ffd24a'); g.addColorStop(1, '#f2892a');
   cx.font = 'bold 92px monospace';
-  cx.fillStyle = '#1a0c38';
-  cx.fillText('BUBBLE KEEP', 640, 270);
-  cx.lineWidth = 7; cx.strokeStyle = '#2a1550';
-  cx.strokeText('BUBBLE KEEP', 640, 262);
-  cx.fillStyle = g;
-  cx.fillText('BUBBLE KEEP', 640, 262);
+  const words = [['BUBBLE', 617, 'right'], ['KEEP', 663, 'left']];
+  for (const [w, wx, al] of words) {
+    cx.textAlign = al;
+    cx.fillStyle = '#1a0c38'; cx.fillText(w, wx, 270);
+    cx.lineWidth = 7; cx.strokeStyle = '#2a1550'; cx.strokeText(w, wx, 262);
+    cx.fillStyle = g; cx.fillText(w, wx, 262);
+  }
+  cx.textAlign = 'center';
   cx.font = 'bold 17px monospace';
   cx.fillStyle = '#c8b6ff';
   cx.fillText('two little dragons · a cave of monsters · a Bubble Bobble tribute', 640, 302);
@@ -2280,12 +2305,12 @@ function drawTitle() {
   cx.restore();
   cx.font = 'bold 13px monospace';
   cx.fillStyle = '#9c8fd0';
-  cx.fillText('\u2190 \u2192 / A D run    \u2191 / Z / W jump    SPACE / X bubble    P pause    M mute', 640, 634);
+  cx.fillText('\u2190\u2192/AD RUN \u00b7 \u2191/Z/W JUMP \u00b7 SPACE/X BUBBLE \u00b7 \u2191\u2193+SPACE AIM \u00b7 P PAUSE \u00b7 M MUTE', 640, 634);
   cx.fillStyle = '#ffd98a'; cx.font = 'bold 14px monospace';
   cx.fillText('TRAP A MONSTER IN A BUBBLE, THEN JUMP INTO IT TO POP IT', 640, 660);
   cx.font = 'bold 15px monospace';
   cx.fillStyle = HARD.on ? '#ff8a5c' : '#7f93c0';
-  cx.fillText('[H]  KEEP MODE: ' + (HARD.on ? 'ON — the keep sends more' : 'off'), 640, 690);
+  cx.fillText('[H] KEEP MODE: ' + (HARD.on ? 'ON \u2014 THE KEEP SENDS MORE' : 'OFF'), 640, 690);
   if (G.best > 0) {
     cx.fillStyle = '#ffe066'; cx.font = 'bold 15px monospace';
     cx.fillText('BEST  ' + G.best, 640, 666);
@@ -2334,7 +2359,7 @@ function drawEnd() {
   const isBest = G.score > 0 && G.score >= G.best;
   cx.font = 'bold 14px monospace';
   cx.fillStyle = isBest ? '#7cff9e' : '#8a7fb5';
-  cx.fillText(isBest ? '\u2605 NEW BEST' : ('BEST  ' + String(G.best).replace(/\B(?=(\d{3})+(?!\d))/g, ',')), 640, 428);
+  cx.fillText('BEST ' + G.best.toLocaleString('en-US') + (isBest ? '  \u2605 NEW' : ''), 640, 428);
   const blink = G.shotMode ? 1 : 0.55 + 0.45 * Math.sin(G.time * 3.4);
   cx.save(); cx.globalAlpha = blink;
   cx.strokeStyle = '#ffe066'; cx.lineWidth = 2.4;
@@ -2569,7 +2594,11 @@ function boot() {
   if (shot && SHOTS[shot]) {
     const def = SHOTS[shot];
     def.run();
-    if (G) { G.shotMode = true; G.headless = false; }
+    if (G) {
+      G.shotMode = true; G.headless = false;
+      // let bursts bloom before the shutter: debris photographed at t=0 is a white disc
+      for (let i = 0; i < 8; i++) { G.time += 1 / 60; roomUpdate(1 / 60); }
+    }
     const ok = def.check();
     document.title = (ok ? 'shot-OK:' : 'shot-FAILED:') + shot;
     draw();

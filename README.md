@@ -425,6 +425,72 @@ The 21 mechanism proofs are untouched and still verify the real rules on
 the real code. What changed is that the macro claim no longer pretends
 the bot is a good player.
 
+## The Fable rebuild
+
+A full structural pass with a deeper model, aimed at the defects every
+panel had converged on but no polish round could fix.
+
+**The world grew to fill the frame.** The keep went from 24 to 32
+columns — 1152px wide, the dead letterbox cut from 208px a side to a
+64px vignette — and all six rooms were redesigned to the level critic's
+rules: stub-shelf ladders at the walls, structure in the upper and
+right thirds, spawn clusters that make cascades reachable, and a
+validator so a malformed row can never ship again (it caught two
+31-character rows on its first run).
+
+**The cast got three silhouettes.** The dragon has a crest, tail,
+rim-light and a contact shadow; the wanderer is squat under a helmet
+brim; the hurler is a tall, shouldered tower with a heavy brow; the
+flyer is small-bodied under huge wings. Black-filled at 24px they read
+as four different creatures — the previous cast was one circle in two
+hues. The HUD moved inside the frame as a lintel plate, and the second
+title dragon is finally blue.
+
+**Breath became a resource.** Four lungfuls; each bubble costs one; a
+catch refunds one instantly; empty lungs wheeze for 0.6s. A hit is
+free, a miss costs tempo — the first real price on the game's only
+verb, and the fix every fun critic ranked first. It has a mechanism
+proof and three mutants, and the calm completability run got *steadier*
+under it: zero deaths, because rationed breath made even the bot stop
+spraying.
+
+**Three real bugs found by instruments, not eyes:**
+
+- **The dragon could jump through the roof.** Jump-through platforms
+  applied to the border ceiling, so chasing a high bubble up a ladder
+  stranded you on top of the room, sealed out of the game forever. A
+  human would have hit this exactly as the bot did — it was found
+  because a stall probe photographed the bot's coordinates at y=−16.
+- **Caught bubbles rose 500px out of reach.** In the new open rooms a
+  captive's bubble climbed uninterrupted to the ceiling, unpoppable.
+  The old cramped rooms had accidentally hidden this by catching
+  bubbles on their shelves. Bubbles now hover ~2.5 tiles above the
+  breath that made them, keeping every catch in play.
+- **The flyer's charge embedded it in walls.** It moved first and
+  collision-checked after. Caught when a sharpened proof failed on the
+  *unmutated* game; it now tests before moving.
+
+**The harness kept pace.** Claims re-pointed at what is true: the demo
+seed is one the eight-seed sweep wins (one seed clears the entire keep
+at shipped difficulty), calm proves end-to-end completability, and the
+mutation gate stands at **54/54 killed, zero survivors** — including a
+flyer mutant that survived three rounds by hiding behind its own charge
+bounce until the proof pinned it in pure drift.
+
+**Fresh critic round on the rebuild:** composition 4.4, game-feel 4.6,
+HUD 6.8 — mean **5.3**, against the 3.9 plateau where the old
+architecture stalled, with every lens up and HUD doubled. Their
+sharpest remaining cut — cascade pops photographing as "white dinner
+plates" — turned out to be 22 additive debris cores caught at t=0 by
+the capture shutter, plus a flash that was *set but never rendered*:
+the flash renderer had silently never existed in this game. Both fixed;
+bursts now bloom for eight frames before the shutter opens.
+
+One deliberate refusal, standing: the `STAGED` watermark on hand-built
+capture frames stays, though every HUD critic calls it a shipping
+blocker. A staged frame that does not say so is a worse defect than an
+ugly one.
+
 ## Honest assessment
 
 - **One critic round** — the scores are a floor, not a ceiling.
