@@ -338,6 +338,25 @@ function popBubble(b, byPlayer) {
       t: 0, life: 0.5 + hash32(k, 3, 4) * 0.2, drag: 0.90, r: 3.4 + hash32(k, 5, 6) * 4.2,
       col: b.holds ? (k % 4 === 0 ? '#ffffff' : KINDS[b.holds.kind].col) : '#dff6ff' });
   }
+  // glass shards: little arcs of the burst membrane, falling like droplets
+  for (let k = 0; k < 7; k++) {
+    const a = k / 7 * 6.283 + hash32(k, Math.floor(b.x), 7) * 0.8;
+    const sp = 120 + hash32(k, Math.floor(b.y), 8) * 140;
+    G.parts.push({ shard: true, x: b.x + Math.cos(a) * b.r * 0.7, y: b.y + Math.sin(a) * b.r * 0.7,
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, ang: a,
+      t: 0, life: 0.55 + hash32(k, 9, 4) * 0.25, drag: 0.94, r: 4 + hash32(k, 5, 9) * 4,
+      col: b.holds ? rgba(KINDS[b.holds.kind].col, 0.9) : 'rgba(200,240,255,0.9)' });
+  }
+  if (b.holds) {
+    // sparkle stars: the kill deserves fireworks, not just confetti
+    for (let k = 0; k < 6; k++) {
+      const a = k / 6 * 6.283 + hash32(k, Math.floor(b.y), 11) * 1.2;
+      const sp = 90 + hash32(k, Math.floor(b.x), 12) * 190;
+      G.parts.push({ star: true, x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        t: -hash32(k, 13) * 0.08, life: 0.5 + hash32(k, 14, 4) * 0.3, drag: 0.92,
+        r: 5 + hash32(k, 15, 6) * 5, col: k % 2 ? '#fff6c4' : '#bffcff' });
+    }
+  }
   if (!b.holds) { beep(300, 0.04, 'sine'); return; }
   // a monster released from a burst bubble is a kill; several in one breath escalate
   if (byPlayer) {
@@ -406,7 +425,7 @@ function updateBubbles(dt) {
           if (G.player) G.player.air = Math.min(AIR_MAX, (G.player.air || 0) + 1);  // a hit is free breath
           G.freeze = Math.max(G.freeze, 0.05);
           G.shake = Math.max(G.shake, 0.18);
-          G.parts.push({ ring: true, x: b.x, y: b.y, t: 0, life: 0.3, col: '#ffffff' });
+          G.parts.push({ ring: true, x: b.x, y: b.y, t: 0, life: 0.3, r0: 12, r1: 64, w0: 10, col: '#8fe0ff' });
           beep(520, 0.08, 'sine');
           break;
         }
@@ -1648,13 +1667,45 @@ function drawBackdrop(full) {
     cx.fillRect(0, 0, BW, BH);
   }
 
-  // ---- the keep is a built place: pillars, arches and chains behind the play ----
+  // ---- the keep is a built place: strata, pillars, arches and chains behind the play ----
   const seedR = G.roomIndex;
-  cx.strokeStyle = 'rgba(150,190,255,0.055)'; cx.lineWidth = 2;
+  const tt = G.time || 0;
+  // far rock strata: two silhouette bands so the cave has depth before the architecture
+  for (let L = 0; L < 2; L++) {
+    const base = BH - (L ? BH * 0.20 : BH * 0.34);
+    cx.fillStyle = L ? 'rgba(52,36,110,0.34)' : 'rgba(40,28,88,0.26)';
+    cx.beginPath(); cx.moveTo(0, BH);
+    cx.lineTo(0, base);
+    for (let x = 0; x <= BW; x += 64) {
+      const h = hash32((x / 64) | 0, seedR, L + 20) * (L ? 46 : 70);
+      cx.quadraticCurveTo(x + 20, base - h, x + 64, base - hash32((x / 64) | 0, seedR, L + 26) * 24);
+    }
+    cx.lineTo(BW, BH); cx.closePath(); cx.fill();
+  }
+  // light shafts falling from the vaults
+  cx.save();
+  cx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 3; i++) {
+    const sx0 = 120 + ((i * 401 + seedR * 149) % (BW - 240));
+    const sw = 46 + hash32(i, seedR, 31) * 60;
+    const sg = cx.createLinearGradient(0, 0, 0, BH);
+    sg.addColorStop(0, 'rgba(150,210,255,0.085)'); sg.addColorStop(0.8, 'rgba(150,210,255,0)');
+    cx.fillStyle = sg;
+    cx.beginPath();
+    cx.moveTo(sx0, 0); cx.lineTo(sx0 + sw, 0);
+    cx.lineTo(sx0 + sw + 70, BH); cx.lineTo(sx0 - 70 + sw * 0.4, BH);
+    cx.closePath(); cx.fill();
+  }
+  cx.restore();
+  cx.strokeStyle = 'rgba(150,190,255,0.13)'; cx.lineWidth = 2;
   for (let i = 0; i < 4; i++) {                       // buttressed columns
     const cxp = 70 + ((i * 227 + seedR * 91) % (BW - 140));
     const w = 34 + hash32(i, seedR, 1) * 22;
-    cx.fillStyle = 'rgba(120,150,230,0.045)';
+    const cg = cx.createLinearGradient(cxp - w / 2, 0, cxp + w / 2, 0);
+    cg.addColorStop(0, 'rgba(90,110,200,0.05)');
+    cg.addColorStop(0.5, 'rgba(150,170,255,0.14)');
+    cg.addColorStop(1, 'rgba(60,70,150,0.05)');
+    cx.fillStyle = cg;
     cx.fillRect(cxp - w / 2, 40, w, BH - 40);
     cx.beginPath(); cx.moveTo(cxp - w / 2, 40); cx.lineTo(cxp - w / 2, BH); cx.stroke();
     cx.beginPath(); cx.moveTo(cxp + w / 2, 40); cx.lineTo(cxp + w / 2, BH); cx.stroke();
@@ -1662,14 +1713,17 @@ function drawBackdrop(full) {
       const by = 70 + b * ((BH - 90) / 5);
       cx.beginPath(); cx.moveTo(cxp - w / 2, by); cx.lineTo(cxp + w / 2, by); cx.stroke();
     }
+    // capital, so the column holds something up
+    cx.fillStyle = 'rgba(150,170,255,0.10)';
+    cx.fillRect(cxp - w / 2 - 6, 40, w + 12, 10);
   }
-  cx.strokeStyle = 'rgba(150,190,255,0.07)'; cx.lineWidth = 3;
+  cx.strokeStyle = 'rgba(160,200,255,0.16)'; cx.lineWidth = 3;
   for (let i = 0; i < 3; i++) {                       // vaulted arches up top
     const ax = 150 + ((i * 300 + seedR * 130) % (BW - 300));
     cx.beginPath(); cx.arc(ax, 96, 84, Math.PI, 0); cx.stroke();
     cx.beginPath(); cx.arc(ax, 96, 62, Math.PI, 0); cx.stroke();
   }
-  cx.strokeStyle = 'rgba(190,210,255,0.05)'; cx.lineWidth = 2;
+  cx.strokeStyle = 'rgba(190,210,255,0.12)'; cx.lineWidth = 2;
   for (let i = 0; i < 5; i++) {                       // hanging chains
     const hx = 46 + ((i * 181 + seedR * 57) % (BW - 92));
     const len = 90 + hash32(i, seedR, 3) * 150;
@@ -1679,31 +1733,55 @@ function drawBackdrop(full) {
       cx.moveTo(hx + 3, 40 + s); cx.lineTo(hx - 3, 46 + s);
     }
     cx.stroke();
-    cx.fillStyle = 'rgba(190,210,255,0.06)';
+    cx.fillStyle = 'rgba(190,210,255,0.14)';
     cx.beginPath(); cx.arc(hx, 34 + len, 5, 0, 7); cx.fill();
   }
-  // braziers: the warm accent the palette was missing
+  // braziers: warm accents with a visible source — sconce, flame, halo
   for (let i = 0; i < 2; i++) {
     const bx = i ? BW - 54 : 54, by = BH * 0.42;
-    const fl = cx.createRadialGradient(bx, by, 2, bx, by, 108);
-    fl.addColorStop(0, 'rgba(255,170,70,0.20)'); fl.addColorStop(1, 'rgba(255,140,60,0)');
-    cx.fillStyle = fl; cx.beginPath(); cx.arc(bx, by, 108, 0, 7); cx.fill();
-    cx.fillStyle = '#ffb347';
-    cx.beginPath(); cx.arc(bx, by, 5, 0, 7); cx.fill();
+    const flick = G.shotMode ? 0.5 : 0.5 + 0.5 * Math.sin(tt * 9 + i * 2.4);
+    const fl = cx.createRadialGradient(bx, by, 2, bx, by, 108 + flick * 14);
+    fl.addColorStop(0, 'rgba(255,170,70,0.26)'); fl.addColorStop(1, 'rgba(255,140,60,0)');
+    cx.fillStyle = fl; cx.beginPath(); cx.arc(bx, by, 108 + flick * 14, 0, 7); cx.fill();
+    // iron sconce bowl
+    cx.fillStyle = 'rgba(30,22,50,0.9)';
+    cx.beginPath(); cx.moveTo(bx - 11, by + 4); cx.lineTo(bx + 11, by + 4);
+    cx.lineTo(bx + 6, by + 12); cx.lineTo(bx - 6, by + 12); cx.closePath(); cx.fill();
+    cx.strokeStyle = 'rgba(150,170,255,0.25)'; cx.lineWidth = 1.5;
+    cx.beginPath(); cx.moveTo(bx - 11, by + 4); cx.lineTo(bx + 11, by + 4); cx.stroke();
+    // teardrop flame, two layers
+    cx.fillStyle = '#ff9a3d';
+    cx.beginPath(); cx.moveTo(bx, by - 12 - flick * 4);
+    cx.quadraticCurveTo(bx + 7, by - 2, bx, by + 5);
+    cx.quadraticCurveTo(bx - 7, by - 2, bx, by - 12 - flick * 4); cx.fill();
+    cx.fillStyle = '#ffe08a';
+    cx.beginPath(); cx.moveTo(bx, by - 5 - flick * 2);
+    cx.quadraticCurveTo(bx + 3.5, by, bx, by + 4);
+    cx.quadraticCurveTo(bx - 3.5, by, bx, by - 5 - flick * 2); cx.fill();
   }
-  cx.fillStyle = 'rgba(255,255,255,0.03)';
+  // dust motes: a still fine layer, plus a few slow risers that catch the light
+  cx.fillStyle = 'rgba(255,255,255,0.05)';
   for (let i = 0; i < 40; i++) {
     const x = hash32(i, 7) * BW, y = hash32(i, 8) * BH, s = 2 + hash32(i, 9) * 3;
     cx.fillRect(x, y, s, s);
   }
+  cx.save();
+  cx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 14; i++) {
+    const mx = hash32(i, 41) * BW + Math.sin(tt * 0.5 + i * 2.1) * 18;
+    const my = ((hash32(i, 42) * BH + BH - tt * (6 + hash32(i, 43) * 10)) % BH + BH) % BH;
+    cx.fillStyle = 'rgba(170,220,255,' + (0.05 + hash32(i, 44) * 0.09).toFixed(2) + ')';
+    cx.beginPath(); cx.arc(mx, my, 1.4 + hash32(i, 45) * 1.8, 0, 7); cx.fill();
+  }
+  cx.restore();
   cx.restore();
 }
 function tileCols() {
   const i = G.roomIndex % 6;
   const sets = [
-    ['#265f9e', '#143c6e', '#4a86c8'], ['#9e4426', '#6b2712', '#c87450'],
-    ['#2f7a42', '#1a4a2c', '#5aa872'], ['#7a4496', '#4c2762', '#a86cc0'],
-    ['#9c7524', '#6e4f12', '#c2a050'], ['#3d54a0', '#25336a', '#7488c8'],
+    ['#2e78c8', '#16437e', '#63aef0'], ['#c05428', '#7c2e10', '#ee8a54'],
+    ['#31964e', '#1a5a30', '#68cc86'], ['#9250b8', '#572c74', '#c288e2'],
+    ['#bd8f2a', '#7e5c12', '#eec258'], ['#4864c4', '#2a3a80', '#8ca0ee'],
   ];
   return sets[i];
 }
@@ -1739,7 +1817,7 @@ function drawRoom() {
     };
     if (isWall) {
       // the border is masonry: flat, dark, no gloss — it must not read as a ledge
-      cx.fillStyle = '#12294a'; cx.fillRect(px, py, TILE, TILE);
+      cx.fillStyle = '#152f56'; cx.fillRect(px, py, TILE, TILE);
       cx.strokeStyle = '#0a1730'; cx.lineWidth = 1;
       cx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
       cx.fillStyle = 'rgba(0,0,0,0.10)';       // stone dither, no bevel, no gloss
@@ -1747,6 +1825,12 @@ function drawRoom() {
         const hx = hash32(x, y, d) * (TILE - 6), hy = hash32(y, x, d + 9) * (TILE - 6);
         cx.fillRect(px + 3 + hx, py + 3 + hy, 3, 3);
       }
+      // a faint lit rim on whichever face looks into the room, so the keep reads as a frame
+      cx.fillStyle = 'rgba(120,190,255,0.22)';
+      if (y === 0 && !solidAt(G.room, x, y + 1)) cx.fillRect(px, py + TILE - 2, TILE, 2);
+      if (y === ROWS - 1 && !solidAt(G.room, x, y - 1)) cx.fillRect(px, py, TILE, 2);
+      if (x === 0 && !solidAt(G.room, x + 1, y)) cx.fillRect(px + TILE - 2, py, 2, TILE);
+      if (x === COLS - 1 && !solidAt(G.room, x - 1, y)) cx.fillRect(px, py, 2, TILE);
       continue;
     }
     cx.fillStyle = dark; path(0, 3, TILE, TILE - 3); cx.fill();
@@ -1754,9 +1838,14 @@ function drawRoom() {
     fg.addColorStop(0, lite); fg.addColorStop(0.28, face); fg.addColorStop(1, dark);
     cx.fillStyle = fg; path(0, 0, TILE, TILE - 4); cx.fill();
     if (openAbove) {
-      cx.globalAlpha = 0.5; cx.fillStyle = lite;
-      cx.fillRect(px + 2, py + 2, TILE - 4, 2);
-      cx.globalAlpha = 1;
+      // the walkable edge glows: this is where the game happens
+      cx.save();
+      cx.globalCompositeOperation = 'lighter';
+      cx.globalAlpha = 0.55; cx.fillStyle = lite;
+      cx.fillRect(px + (openL ? 4 : 0), py + 1, TILE - (openL ? 4 : 0) - (openR ? 4 : 0), 3);
+      cx.globalAlpha = 0.18;
+      cx.fillRect(px + (openL ? 4 : 0), py + 4, TILE - (openL ? 4 : 0) - (openR ? 4 : 0), 4);
+      cx.restore();
     }
     cx.strokeStyle = '#0a2038'; cx.lineWidth = 3;
     path(1.5, 1.5, TILE - 3, TILE - 7); cx.stroke();
@@ -1830,7 +1919,12 @@ function drawDragon(p) {
   if (B) { bg.addColorStop(0, '#c2e6ff'); bg.addColorStop(0.55, '#74b8f0'); bg.addColorStop(1, '#3a72b8'); }
   else { bg.addColorStop(0, '#ccffae'); bg.addColorStop(0.55, '#8fe86b'); bg.addColorStop(1, '#4aa838'); }
   cx.fillStyle = bg;
+  cx.save();
+  cx.shadowColor = B ? 'rgba(120,200,255,0.55)' : 'rgba(150,255,120,0.55)';
+  cx.shadowBlur = 16;
   cx.beginPath(); cx.ellipse(0, 0, 19, 18, 0, 0, 7); cx.fill();
+  cx.restore();
+  cx.beginPath(); cx.ellipse(0, 0, 19, 18, 0, 0, 7);
   cx.strokeStyle = B ? '#153a66' : '#1c4a17'; cx.lineWidth = 3; cx.stroke();
   // rim light, upper-left
   cx.strokeStyle = 'rgba(255,255,255,0.85)'; cx.lineWidth = 2.5;
@@ -1956,26 +2050,52 @@ function bubbleBody(b) {
 function drawBubble(b) {
   const wob = Math.sin(b.age * 4 + b.x * 0.03) * 0.9 - b.r * (1 - Math.min(1, 0.3 + b.age * 5.5));
   const warn = b.age > BUB_WARN && Math.floor(b.age * 9) % 2 === 0;
+  const R = b.r + wob;
   cx.save();
   cx.translate(b.x, b.y);
-  const g = cx.createRadialGradient(-b.r * 0.35, -b.r * 0.4, 1, 0, 0, b.r + wob);
+  // soft halo so the bubble owns its space in the dark
+  cx.save();
+  cx.globalCompositeOperation = 'lighter';
+  const halo = cx.createRadialGradient(0, 0, R * 0.5, 0, 0, R * 1.8);
+  halo.addColorStop(0, warn ? 'rgba(255,110,130,0.18)' : 'rgba(140,215,255,0.14)');
+  halo.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = halo;
+  cx.beginPath(); cx.arc(0, 0, R * 1.8, 0, 7); cx.fill();
+  cx.restore();
+  // glass membrane
+  const g = cx.createRadialGradient(-R * 0.35, -R * 0.4, 1, 0, 0, R);
   if (warn) { g.addColorStop(0, 'rgba(255,235,235,0.92)'); g.addColorStop(0.62, 'rgba(255,130,140,0.55)'); g.addColorStop(1, 'rgba(255,90,110,0.32)'); }
-  else { g.addColorStop(0, 'rgba(255,255,255,0.80)'); g.addColorStop(0.5, 'rgba(170,235,255,0.34)'); g.addColorStop(1, 'rgba(255,150,220,0.20)'); }
-  cx.shadowColor = warn ? 'rgba(255,120,140,0.9)' : 'rgba(150,220,255,0.75)';
-  cx.shadowBlur = 12;
-  if (!b.holds) { cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, b.r + wob, 0, 7); cx.fill(); }
-  else if (warn) { cx.fillStyle = 'rgba(255,110,130,0.30)'; cx.beginPath(); cx.arc(0, 0, b.r + wob, 0, 7); cx.fill(); }
+  else { g.addColorStop(0, 'rgba(255,255,255,0.85)'); g.addColorStop(0.45, 'rgba(175,238,255,0.38)'); g.addColorStop(0.85, 'rgba(190,160,255,0.22)'); g.addColorStop(1, 'rgba(255,150,220,0.30)'); }
+  cx.shadowColor = warn ? 'rgba(255,120,140,0.9)' : 'rgba(150,220,255,0.85)';
+  cx.shadowBlur = 16;
+  if (!b.holds) { cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, R, 0, 7); cx.fill(); }
+  else if (warn) { cx.fillStyle = 'rgba(255,110,130,0.30)'; cx.beginPath(); cx.arc(0, 0, R, 0, 7); cx.fill(); }
   cx.shadowBlur = 0;
+  // iridescent rim: two hues chase each other around the skin
   const hue = 185 + Math.sin(b.age * 1.4 + b.x * 0.01) * 45;
-  cx.strokeStyle = warn ? 'rgba(255,180,190,1)' : 'hsla(' + hue.toFixed(0) + ',95%,80%,0.9)';
-  cx.lineWidth = 2.4;
-  cx.beginPath(); cx.arc(0, 0, b.r + wob, 0, 7); cx.stroke();
+  const spin = b.age * 0.9 + b.x * 0.02;
+  cx.lineWidth = 2.6;
+  cx.strokeStyle = warn ? 'rgba(255,180,190,1)' : 'hsla(' + hue.toFixed(0) + ',95%,80%,0.95)';
+  cx.beginPath(); cx.arc(0, 0, R, 0, 7); cx.stroke();
+  if (!warn) {
+    cx.lineWidth = 2.2;
+    cx.strokeStyle = 'hsla(' + ((hue + 130) % 360).toFixed(0) + ',95%,78%,0.8)';
+    cx.beginPath(); cx.arc(0, 0, R, spin, spin + 2.4); cx.stroke();
+    cx.strokeStyle = 'hsla(' + ((hue + 260) % 360).toFixed(0) + ',95%,82%,0.6)';
+    cx.beginPath(); cx.arc(0, 0, R, spin + 3.6, spin + 5.2); cx.stroke();
+  }
+  // interior refraction: a thick soft arc hugging the lower-right of the shell
+  cx.strokeStyle = warn ? 'rgba(255,220,225,0.8)' : 'rgba(210,245,255,0.55)';
+  cx.lineWidth = R * 0.16;
+  cx.beginPath(); cx.arc(0, 0, R * 0.74, 0.3, 1.4); cx.stroke();
+  // crescent gloss up top
   cx.strokeStyle = 'rgba(255,255,255,0.95)'; cx.lineWidth = 2.8;
-  cx.beginPath(); cx.arc(0, 0, b.r * 0.64, 3.5, 4.7); cx.stroke();
+  cx.beginPath(); cx.arc(0, 0, R * 0.64, 3.5, 4.7); cx.stroke();
+  // twin speculars
   cx.fillStyle = 'rgba(255,255,255,1)';
-  cx.beginPath(); cx.arc(-b.r * 0.34, -b.r * 0.44, 3.1, 0, 7); cx.fill();
-  cx.globalAlpha = 0.5;
-  cx.beginPath(); cx.arc(b.r * 0.3, b.r * 0.34, 1.6, 0, 7); cx.fill();
+  cx.beginPath(); cx.ellipse(-R * 0.36, -R * 0.46, R * 0.17 + 1.4, R * 0.10 + 1, -0.7, 0, 7); cx.fill();
+  cx.globalAlpha = 0.55;
+  cx.beginPath(); cx.arc(R * 0.3, R * 0.34, 1.8, 0, 7); cx.fill();
   cx.globalAlpha = 1;
   cx.restore();
 }
@@ -2051,9 +2171,43 @@ function drawPlayfield() {
       cx.save();
       cx.globalCompositeOperation = 'lighter';
       cx.globalAlpha = Math.max(0, 1 - k) * 0.95;
+      const rr2 = (q.r0 || 14) + k * ((q.r1 || 90) - (q.r0 || 14));
       cx.strokeStyle = q.col;
       cx.lineWidth = Math.max(1, (q.w0 || 8) * (1 - k));
-      cx.beginPath(); cx.arc(q.x, q.y, (q.r0 || 14) + k * ((q.r1 || 90) - (q.r0 || 14)), 0, 7); cx.stroke();
+      cx.beginPath(); cx.arc(q.x, q.y, rr2, 0, 7); cx.stroke();
+      // a hot thin core inside the wave, so the shock has an edge
+      cx.globalAlpha = Math.max(0, 1 - k);
+      cx.strokeStyle = 'rgba(255,255,255,0.9)';
+      cx.lineWidth = Math.max(0.8, 2.4 * (1 - k));
+      cx.beginPath(); cx.arc(q.x, q.y, rr2 - Math.max(1, (q.w0 || 8) * (1 - k)) * 0.5, 0, 7); cx.stroke();
+      cx.restore();
+    } else if (q.star) {
+      if (q.t < 0) continue;
+      const k = q.t / q.life;
+      const s = (q.r || 5) * (1 - k * 0.5);
+      cx.save();
+      cx.globalCompositeOperation = 'lighter';
+      cx.globalAlpha = Math.max(0, 1 - k * k);
+      cx.translate(q.x, q.y); cx.rotate(q.t * 3 + (q.r || 0));
+      cx.fillStyle = q.col;
+      cx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const rr3 = i % 2 === 0 ? s : s * 0.32;
+        const a2 = i / 8 * 6.283;
+        cx.lineTo(Math.cos(a2) * rr3, Math.sin(a2) * rr3);
+      }
+      cx.closePath(); cx.fill();
+      cx.fillStyle = 'rgba(255,255,255,0.95)';
+      cx.beginPath(); cx.arc(0, 0, s * 0.22, 0, 7); cx.fill();
+      cx.restore();
+    } else if (q.shard) {
+      const k = q.t / q.life;
+      cx.save();
+      cx.globalCompositeOperation = 'lighter';
+      cx.globalAlpha = Math.max(0, 1 - k * k) * 0.9;
+      cx.translate(q.x, q.y); cx.rotate((q.ang || 0) + q.t * 6);
+      cx.strokeStyle = q.col; cx.lineWidth = 2; cx.lineCap = 'round';
+      cx.beginPath(); cx.arc(0, 0, q.r || 4, -0.7, 0.7); cx.stroke();
       cx.restore();
     } else {
       const k = q.t / q.life;
@@ -2083,12 +2237,19 @@ function drawPlayfield() {
       cx.scale(s, s); cx.translate(-b.x, -b.y);
       drawMonster(b.holds);                           // the captive, clearly inside
       cx.restore();
-      // a cage of light so it reads as trapped, not standing there
+      // glass meridians in the captive's own color: sealed in, not standing there
       cx.save();
       cx.translate(b.x, b.y);
-      cx.strokeStyle = 'rgba(255,255,255,0.30)'; cx.lineWidth = 1.4;
-      cx.beginPath(); cx.ellipse(0, 0, b.r * 0.92, b.r * 0.42, 0, 0, 7); cx.stroke();
-      cx.beginPath(); cx.ellipse(0, 0, b.r * 0.42, b.r * 0.92, 0, 0, 7); cx.stroke();
+      const tcol = KINDS[b.holds.kind].col;
+      const sway = Math.sin(b.age * 2.2) * 0.2;
+      cx.strokeStyle = rgba(tcol, 0.35); cx.lineWidth = 1.6;
+      cx.beginPath(); cx.ellipse(0, 0, b.r * 0.92, b.r * 0.36, sway, 0, 7); cx.stroke();
+      cx.strokeStyle = 'rgba(255,255,255,0.22)'; cx.lineWidth = 1.2;
+      cx.beginPath(); cx.ellipse(0, 0, b.r * 0.38, b.r * 0.92, sway * 0.6, 0, 7); cx.stroke();
+      // membrane shimmer sliding over the captive
+      cx.strokeStyle = 'rgba(255,255,255,0.45)'; cx.lineWidth = 2.2;
+      const sh = b.age * 1.6;
+      cx.beginPath(); cx.arc(0, 0, b.r * 0.8, sh, sh + 0.9); cx.stroke();
       cx.restore();
     }
     drawBubble(b);
@@ -2129,19 +2290,34 @@ function drawPlayfield() {
     cx.restore();
   }
   cx.restore();
-  // frame
-  cx.strokeStyle = '#3b2a6b'; cx.lineWidth = 4;
+  // frame: a neon edge that blooms softly into the letterbox
+  cx.save();
+  cx.shadowColor = 'rgba(110,90,220,0.55)'; cx.shadowBlur = 18;
+  cx.strokeStyle = '#4b3a8b'; cx.lineWidth = 4;
   cx.strokeRect(OX - 2, OY - 2, PW + 4, PH + 4);
+  cx.restore();
+  cx.strokeStyle = 'rgba(150,190,255,0.20)'; cx.lineWidth = 1;
+  cx.strokeRect(OX - 5.5, OY - 5.5, PW + 11, PH + 11);
 }
 function drawHUD() {
   // the HUD is part of the keep now: a lintel plate across the top of the room
-  cx.fillStyle = 'rgba(8,4,24,0.78)';
+  const hg = cx.createLinearGradient(0, OY, 0, OY + 46);
+  hg.addColorStop(0, 'rgba(16,10,40,0.92)');
+  hg.addColorStop(0.85, 'rgba(8,4,24,0.78)');
+  hg.addColorStop(1, 'rgba(8,4,24,0.70)');
+  cx.fillStyle = hg;
   cx.fillRect(OX, OY, PW, 46);
-  cx.fillStyle = 'rgba(53,162,232,0.5)';
-  cx.fillRect(OX, OY + 45, PW, 1.5);
+  cx.fillStyle = 'rgba(255,255,255,0.06)';        // machined top edge
+  cx.fillRect(OX, OY, PW, 1);
+  const lg = cx.createLinearGradient(OX, 0, OX + PW, 0);  // lit bottom rail
+  lg.addColorStop(0, 'rgba(53,162,232,0.15)');
+  lg.addColorStop(0.5, 'rgba(110,220,255,0.75)');
+  lg.addColorStop(1, 'rgba(53,162,232,0.15)');
+  cx.fillStyle = lg;
+  cx.fillRect(OX, OY + 44.5, PW, 2);
   const LY = OY + 16, VY = OY + 38;
   const label = (s, x, right) => {
-    cx.fillStyle = '#e8b93a'; cx.font = 'bold 11px monospace';
+    cx.fillStyle = 'rgba(143,212,255,0.85)'; cx.font = 'bold 11px monospace';
     cx.textAlign = right ? 'right' : 'left'; cx.fillText(s, x, LY);
   };
   const value = (s, x, right, col) => {
@@ -2189,13 +2365,21 @@ function drawHUD() {
   cx.textAlign = 'center';
   for (let i = 0; i < 6; i++) {
     const x = OX + PW - 12 - (5 - i) * 22 - 8;
-    cx.font = 'bold 16px monospace';
+    const cy2 = VY - 6;
     if (G.have[i]) {
+      // collected letters live inside little lit bubbles
       cx.save(); cx.shadowColor = '#7cff9e'; cx.shadowBlur = 8;
-      cx.fillStyle = '#7cff9e'; cx.fillText(LETTERS[i], x, VY); cx.restore();
+      cx.fillStyle = 'rgba(124,255,158,0.14)';
+      cx.beginPath(); cx.arc(x, cy2, 10, 0, 7); cx.fill();
+      cx.strokeStyle = 'rgba(124,255,158,0.8)'; cx.lineWidth = 1.4;
+      cx.beginPath(); cx.arc(x, cy2, 10, 0, 7); cx.stroke();
+      cx.fillStyle = '#7cff9e'; cx.font = 'bold 13px monospace';
+      cx.fillText(LETTERS[i], x, VY - 1); cx.restore();
     } else {
-      cx.strokeStyle = 'rgba(255,255,255,0.30)'; cx.lineWidth = 1.4;
-      cx.strokeText(LETTERS[i], x, VY);
+      cx.strokeStyle = 'rgba(255,255,255,0.22)'; cx.lineWidth = 1.2;
+      cx.beginPath(); cx.arc(x, cy2, 10, 0, 7); cx.stroke();
+      cx.fillStyle = 'rgba(255,255,255,0.35)'; cx.font = 'bold 13px monospace';
+      cx.fillText(LETTERS[i], x, VY - 1);
     }
   }
   if (G.hard) {
@@ -2274,24 +2458,64 @@ function drawTitle() {
     drawDragon({ x: 0, y: 0, anim: t + i, face: 1, squash: 0, blowT: 0, invuln: 0, blue: i === 1 });
     cx.restore();
   }
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 14; i++) {
     const x = 60 + hash32(i, 3) * 1160;
     const y = ((hash32(i, 4) * 700 + t * (22 + hash32(i, 5) * 30)) % 760) - 30;
-    // keep the drift out of the type: a clear band down the middle of the card
-    if (x > 210 && x < 1070 && y > 150 && y < 690) continue;
+    // keep the drift out of the type, but let it live in the middle of the card
+    if (y > 130 && y < 330 && x > 200 && x < 1080) continue;   // the wordmark band
+    if (y > 560 && x > 240 && x < 1040) continue;              // the instructions
     drawBubble({ x: x, y: y, r: 10 + hash32(i, 6) * 12, age: t + i, holds: null });
   }
-  const g = cx.createLinearGradient(0, 170, 0, 285);
-  g.addColorStop(0, '#fff8d0'); g.addColorStop(0.5, '#ffd24a'); g.addColorStop(1, '#f2892a');
-  cx.font = 'bold 92px monospace';
-  const words = [['BUBBLE', 617, 'right'], ['KEEP', 663, 'left']];
-  for (const [w, wx, al] of words) {
-    cx.textAlign = al;
-    cx.fillStyle = '#1a0c38'; cx.fillText(w, wx, 270);
-    cx.lineWidth = 7; cx.strokeStyle = '#2a1550'; cx.strokeText(w, wx, 262);
-    cx.fillStyle = g; cx.fillText(w, wx, 262);
+  // a great glass bubble holds the wordmark
+  cx.save();
+  cx.globalCompositeOperation = 'lighter';
+  const hg2 = cx.createRadialGradient(640, 232, 60, 640, 232, 230);
+  hg2.addColorStop(0, 'rgba(120,180,255,0.10)');
+  hg2.addColorStop(0.82, 'rgba(150,120,255,0.05)');
+  hg2.addColorStop(0.98, 'rgba(190,235,255,0.16)');
+  hg2.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = hg2; cx.beginPath(); cx.arc(640, 232, 230, 0, 7); cx.fill();
+  cx.strokeStyle = 'rgba(190,235,255,0.28)'; cx.lineWidth = 2;
+  cx.beginPath(); cx.arc(640, 232, 226, 0, 7); cx.stroke();
+  cx.strokeStyle = 'rgba(255,255,255,0.5)'; cx.lineWidth = 4;
+  cx.beginPath(); cx.arc(640, 232, 214, 3.7, 4.4); cx.stroke();
+  cx.restore();
+  // the wordmark: each letter set by hand — bounce, tilt, gloss — no default type
+  const word = 'BUBBLE KEEP';
+  cx.font = 'bold 96px monospace';
+  const chW = cx.measureText('M').width;
+  const totW = chW * word.length;
+  for (let i = 0; i < word.length; i++) {
+    const ch = word[i];
+    if (ch === ' ') continue;
+    const lx = 640 - totW / 2 + chW * (i + 0.5);
+    const ly = 252 + Math.sin(t * 2.2 + i * 0.6) * 5;
+    const g = cx.createLinearGradient(0, -74, 0, 8);           // local space: set after translate
+    g.addColorStop(0, '#fff8d0'); g.addColorStop(0.55, '#ffd24a'); g.addColorStop(1, '#f2892a');
+    cx.save();
+    cx.translate(lx, ly);
+    cx.rotate(Math.sin(i * 1.7 + 0.8) * 0.045);
+    cx.textAlign = 'center';
+    cx.fillStyle = '#1a0c38'; cx.fillText(ch, 0, 9);           // drop shadow
+    cx.lineWidth = 9; cx.lineJoin = 'round'; cx.strokeStyle = '#2a1550';
+    cx.strokeText(ch, 0, 0);
+    cx.fillStyle = g; cx.fillText(ch, 0, 0);
+    cx.save();                                                 // glass gloss on the upper half
+    cx.beginPath(); cx.rect(-chW / 2, -78, chW, 30); cx.clip();
+    cx.fillStyle = 'rgba(255,255,255,0.34)'; cx.fillText(ch, 0, 0);
+    cx.restore();
+    cx.restore();
   }
   cx.textAlign = 'center';
+  // the fantasy itself, center stage: a monster sealed in glass between the dragons
+  const camY = 432 + Math.sin(t * 1.6) * 8;
+  const cam = { kind: 'wanderer', x: 640, y: camY, w: 30, h: 30, anim: t, vx: 1, seed: 3, state: 'held' };
+  bubbleBody({ x: 640, y: camY, r: 34, age: 2 + (t % 1), holds: cam });
+  cx.save();
+  cx.translate(640, camY); cx.scale(0.62, 0.62); cx.translate(-640, -camY);
+  drawMonster(cam);
+  cx.restore();
+  drawBubble({ x: 640, y: camY, r: 34, age: 2 + (t % 1) * 0.001, holds: cam });
   cx.font = 'bold 17px monospace';
   cx.fillStyle = '#c8b6ff';
   cx.fillText('two little dragons · a cave of monsters · a Bubble Bobble tribute', 640, 302);
