@@ -2299,13 +2299,16 @@ function drawTitle() {
   cx.save(); cx.globalAlpha = pulse;
   cx.font = 'bold 20px monospace';
   cx.lineWidth = 6; cx.strokeStyle = '#2a1550';
-  cx.strokeText('PRESS SPACE TO START', 640, 600);
+  const startTxt = TOUCHUI ? 'TAP TO START' : 'PRESS SPACE TO START';
+  cx.strokeText(startTxt, 640, 600);
   cx.fillStyle = '#ffffff';
-  cx.fillText('PRESS SPACE TO START', 640, 600);
+  cx.fillText(startTxt, 640, 600);
   cx.restore();
   cx.font = 'bold 13px monospace';
   cx.fillStyle = '#9c8fd0';
-  cx.fillText('\u2190\u2192/AD RUN \u00b7 \u2191/Z/W JUMP \u00b7 SPACE/X BUBBLE \u00b7 \u2191\u2193+SPACE AIM \u00b7 P PAUSE \u00b7 M MUTE', 640, 634);
+  cx.fillText(TOUCHUI
+    ? '\u25c0 \u25b6 RUN \u00b7 \u25b2 JUMP \u00b7 \u25cf BUBBLE'
+    : '\u2190\u2192/AD RUN \u00b7 \u2191/Z/W JUMP \u00b7 SPACE/X BUBBLE \u00b7 \u2191\u2193+SPACE AIM \u00b7 P PAUSE \u00b7 M MUTE', 640, 634);
   cx.fillStyle = '#ffd98a'; cx.font = 'bold 14px monospace';
   cx.fillText('TRAP A MONSTER IN A BUBBLE, THEN JUMP INTO IT TO POP IT', 640, 660);
   cx.font = 'bold 15px monospace';
@@ -2365,7 +2368,7 @@ function drawEnd() {
   cx.strokeStyle = '#ffe066'; cx.lineWidth = 2.4;
   rr(478, 462, 324, 44, 12); cx.stroke();
   cx.fillStyle = '#ffe066'; cx.font = 'bold 15px monospace';
-  cx.fillText('[SPACE] PLAY AGAIN', 640, 490);
+  cx.fillText(TOUCHUI ? 'TAP TO PLAY AGAIN' : '[SPACE] PLAY AGAIN', 640, 490);
   cx.restore();
   // the cast, celebrating or not
   for (let i = 0; i < 2; i++) {
@@ -2582,6 +2585,7 @@ const QS = new URLSearchParams(location.search);
 const URLSEED = +(QS.get('seed') || RUN_SEED) || RUN_SEED;
 const HARD = { on: false };
 try { HARD.on = QS.get('hard') === '1' || !!localStorage.getItem('bubblekeep.hard'); } catch (e) { }
+const TOUCHUI = (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) || QS.get('touch') === '1';
 function boot() {
   cv = document.getElementById('cv');
   cx = cv.getContext('2d');
@@ -2606,7 +2610,20 @@ function boot() {
   }
   window.addEventListener('keydown', e => onKey(e, true));
   window.addEventListener('keyup', e => onKey(e, false));
-  cv.addEventListener('mousedown', () => { if (G.screen === 'title' || G.over || G.won) { const b = G.best; newGame(URLSEED, { hard: HARD.on }); G.best = b; } });
+  cv.addEventListener('pointerdown', () => { if (G.screen === 'title' || G.over || G.won) { const b = G.best; newGame(URLSEED, { hard: HARD.on }); G.best = b; } });
+  // mobile keeps a gesture-less AudioContext suspended: unlock it on the first press
+  const unlock = () => { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) { } };
+  window.addEventListener('pointerdown', unlock);
+  window.addEventListener('keydown', unlock);
+  // on-screen buttons feed the same onKey path the keyboard uses
+  if (TOUCHUI) { const t = document.getElementById('touch'); if (t) t.style.display = 'block'; }
+  for (const b of document.querySelectorAll('#touch button')) {
+    const k = b.dataset.key, fake = down => onKey({ key: k, preventDefault() { } }, down);
+    b.addEventListener('pointerdown', e => { e.preventDefault(); if (b.setPointerCapture) try { b.setPointerCapture(e.pointerId); } catch (err) { } fake(true); });
+    b.addEventListener('pointerup', () => fake(false));
+    b.addEventListener('pointercancel', () => fake(false));
+    b.addEventListener('contextmenu', e => e.preventDefault());
+  }
   newGame(URLSEED, { hard: HARD.on });
   G.screen = 'title';
   let last = 0;
